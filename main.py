@@ -1,3 +1,4 @@
+
 import pygame
 import random 
 import os
@@ -5,8 +6,7 @@ import sys
 import math
 import sqlite3
 
-con = sqlite3.connect("data/records.sqlite")
-cur = con.cursor()
+
 pygame.init()
 pygame.display.set_caption('')
 size = width, height = 1300, 700
@@ -127,7 +127,6 @@ def nick_screen():
 
 
 def chooseD_screen():
-    global gaming
     fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
     screen.blit(fon, (0, 0))
     d2_button = Button(screen, (3, 0, 79), (width - 700) // 4, (height - 200) // 2, 350, 200, "2D", (255, 255, 255))
@@ -140,13 +139,10 @@ def chooseD_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if d2_button.press(pygame.mouse.get_pos()):
-                    gaming = True
                     return 2
                 elif d3_button.press(pygame.mouse.get_pos()):
-                    gaming = True
                     return 3
                 elif pre_button.press(pygame.mouse.get_pos()):
-                    gaming = False
                     return
         pygame.display.flip()
         clock.tick(50)
@@ -156,8 +152,11 @@ def records_screen():
     fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
     screen.blit(fon, (0, 0))
     pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
-    result = cur.execute("""SELECT * FROM rec
+    con = sqlite3.connect("data/players.sqlite")
+    cur = con.cursor()
+    result = cur.execute("""SELECT * FROM players
     ORDER BY lvl""").fetchall()
+    con.close()    
     x = (width - 350) // 2
     y = 100
     for elem in result:
@@ -204,9 +203,13 @@ def rules_screen():
 
 
 def start_screen():
-    result = cur.execute("""SELECT nick FROM rec""").fetchall()
+    con = sqlite3.connect("data/players.sqlite")
+    cur = con.cursor()
+    result = cur.execute("""SELECT nick FROM players""").fetchall()
     if (nickname,) not in result:
-        cur.execute("""INSERT INTO rec(nick, lvl) VALUES('""" + nickname + """', 1)""").fetchall()
+        cur.execute("""INSERT INTO players(nick, lvl) VALUES('""" + nickname + """', 1)""").fetchall()
+        con.commit()
+    con.close()
     fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
     screen.blit(fon, (0, 0))
     start_button = Button(screen, (3, 0, 79), (width - 350) // 2, 260, 350, 100, "Начать", (255, 255, 255), 50)
@@ -249,26 +252,39 @@ def start_screen():
 
 
 def spaceships_screen():
-    global order, gaming2
+    global order, gaming2, money, lvl
+    lvl = 10
     spaceships = {
-        0: ['spaceship1_2.png', 'bullet1_1.png', 'opponent1.png', 'Characteristics 1:'],
-        1: ['spaceship2_2.png', 'bullet2_1.png', 'opponent2.png', 'Characteristics 2:'],
-        2: ['spaceship3_2.png', 'bullet3_1.png', 'opponent3.png', 'Characteristics 3:']
+        0: ['spaceship1_2.png', 'bullet1_1.png', 'Урон: 1'],
+        1: ['spaceship2_2.png', 'bullet2_1.png', 'Урон: 2'],
+        2: ['spaceship3_2.png', 'bullet3_1.png', 'Урон: 3']
     }
+    cadr = 0
     while True:
         fon = pygame.transform.scale(load_image('station.jpg'), (width, height))
         screen.blit(fon, (0, 0))
-
+        text = f'Монет: {int(money)}'
+        character_text = pygame.font.SysFont("Calibri", 40).render(text, 1, (255, 255, 255))
+        screen.blit(character_text, (1100, 30))
+        
         left_choise = Button(screen, (3, 0, 79), 365, 600, 145, 75, "<<", (255, 255, 255))
         right_choise = Button(screen, (3, 0, 79), 790, 600, 145, 75, ">>", (255, 255, 255))
-        choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Выбрать", (255, 255, 255), 50)
+        if spaceships_pl[order] == 1:
+            choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Выбрать", (255, 255, 255), 50)
+        elif cadr == 0:
+            choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Купить: "+str(spaceships_price[order])+' монет', (255, 255, 255), 30)
+        else:
+            cadr += 1
+            choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Недостаточно монет", (255, 255, 255), 25) 
+            if cadr > 50:
+                cadr = 0
         pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
 
-        character_text = pygame.font.SysFont("Calibri", 30).render(spaceships[order][3], 1, (255, 255, 255))
+        character_text = pygame.font.SysFont("Calibri", 30).render(spaceships[order][2], 1, (255, 255, 255))
 
         ship_image = pygame.transform.scale(load_image(spaceships[order][0], -1), (305, 300))
         bullet_image = pygame.transform.scale(load_image(spaceships[order][1], -1), (50, 85))
-
+        
         screen.blit(ship_image, (500, 200))
         screen.blit(bullet_image, (625, 100))
         screen.blit(character_text, (100, 100))
@@ -282,11 +298,35 @@ def spaceships_screen():
                 elif right_choise.press(pygame.mouse.get_pos()):
                     order = (order + 1) % 3
                 elif choise.press(pygame.mouse.get_pos()):
-                    gaming2 = True
-                    return
+                    if spaceships_pl[order] == 0 and money >= spaceships_price[order]:
+                        gaming2 = True
+                        money -= spaceships_price[order]
+                        spaceships_pl[order] = 1
+                        con = sqlite3.connect("data/players.sqlite")
+                        cur = con.cursor()                        
+                        cur.execute("""UPDATE players
+                        SET sp1 = """ + str(spaceships_pl[0]) + """ 
+                        WHERE nick == '""" + nickname + """'""").fetchall()                       
+                        cur.execute("""UPDATE players
+                        SET sp2 = """ + str(spaceships_pl[1]) + """ 
+                        WHERE nick == '""" + nickname + """'""").fetchall()                       
+                        cur.execute("""UPDATE players
+                        SET sp3 = """ + str(spaceships_pl[2]) + """ 
+                        WHERE nick == '""" + nickname + """'""").fetchall()                       
+                        cur.execute("""UPDATE players
+                        SET money = """ + str(money) + """ 
+                        WHERE nick == '""" + nickname + """'""").fetchall()
+                        con.commit()
+                        con.close()                        
+                        return 1
+                    elif spaceships_pl[order] == 1:
+                        gaming2 = True
+                        return 1
+                    else:
+                        cadr = 1
                 elif pre_button.press(pygame.mouse.get_pos()):
                     gaming2 = False
-                    return
+                    return 0
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     order = (order - 1) % 3
@@ -328,7 +368,10 @@ def levelpass_screen(passed, lvl):
         text = f'Уровень {lvl} пройден!'
         text_continue = 'Продолжить'
         character_text = pygame.font.SysFont("Calibri", 80).render(text, 1, (255, 255, 255))
-        screen.blit(character_text, (325, 100))
+        screen.blit(character_text, (325, 80))
+        text = f'Вы заработали монет: {int(((lvl)*10)**2/100)}'
+        character_text = pygame.font.SysFont("Calibri", 80).render(text, 1, (255, 255, 255))
+        screen.blit(character_text, (300, 170))
     else:
         text = f'Уровень {lvl} не пройден!'
         text_continue = 'Заново'
@@ -350,6 +393,7 @@ def levelpass_screen(passed, lvl):
                 elif pre_button.press(pygame.mouse.get_pos()):
                     gaming = False
                     gaming2 = False
+                    lvl = 10
                     return
         pygame.display.flip()
         clock.tick(50)
@@ -859,7 +903,12 @@ class Game_3d:
                 for p in opp:
                     r = angle(cam, cam_a, (i[0]+p[0][0], i[1]+p[0][1], i[2]+p[0][2]))
                     r1 = angle(cam, cam_a, (i[0]+p[1][0], i[1]+p[1][1], i[2]+p[1][2]))
-                    pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
+                    if i[3] == 1:
+                        pygame.draw.line(screen, (0, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
+                    elif i[3] == 2:
+                        pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
+                    else:
+                        pygame.draw.line(screen, (255, 0, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
             if pv == 1: 
                 i = [cam[0]+15, cam[1], cam[2]-3]       
                 for p in opp:
@@ -876,8 +925,14 @@ class Game_3d:
                     running = False  
                     
                 f = 0
+                d = 0
                 for j in range(len(player_bullets)):
-                    if f == 0 and ((player_bullets[j][0] - opponents[opponent-w][0])**2 + (player_bullets[j][1] - opponents[opponent-w][1])**2+(player_bullets[j][2] - opponents[opponent-w][2])**2)**0.5 < 5:
+                    if j % 4 == 0 and f == 0:
+                        if ((player_bullets[j][0] - opponents[opponent-w][0])**2 + (player_bullets[j][1] - opponents[opponent-w][1])**2+(player_bullets[j][2] - opponents[opponent-w][2])**2)**0.5 < 15:
+                            d = 1
+                        else:
+                            d = 0
+                    if d == 1 and f == 0 and ((player_bullets[j][0] - opponents[opponent-w][0])**2 + (player_bullets[j][1] - opponents[opponent-w][1])**2+(player_bullets[j][2] - opponents[opponent-w][2])**2)**0.5 < 5:
                         killed_ships += min(spaceship_id, opponents[opponent-w][3])
                         opponents[opponent-w][3] -= min(spaceship_id, opponents[opponent-w][3])
                         del player_bullets[j]
@@ -906,13 +961,13 @@ class Game_3d:
                     
             w = 0
             for opp_bullet in range(len(opp_bullets)):
+                if pv == 1:
+                    cam = [cam[0]-15, cam[1], cam[2]+3]                    
                 xs, ys = angle(cam, cam_a, opp_bullets[opp_bullet-w][:3])
                 s = ((cam[0] - opp_bullets[opp_bullet-w][0])**2 + (cam[1] - opp_bullets[opp_bullet-w][1])**2 + (cam[2] - opp_bullets[opp_bullet-w][2])**2)**0.5   
-                if s < 600:
-                    pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), 50/max(s**0.5, 0.01)) 
-                else:
-                    screen.fill((255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))             
-                    
+                pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), 50/max(s**0.5, 0.01))       
+                if pv == 1:
+                    cam = [cam[0]+15, cam[1], cam[2]-3]    
                 opp_bullets[opp_bullet-w] = (opp_bullets[opp_bullet-w][0]-1, opp_bullets[opp_bullet-w][1]-opp_bullets[opp_bullet-w][3]*2, opp_bullets[opp_bullet-w][2]-opp_bullets[opp_bullet-w][4]*2, opp_bullets[opp_bullet-w][3], opp_bullets[opp_bullet-w][4]) 
                 if ((opp_bullets[opp_bullet-w][0]-cam[0])**2+(opp_bullets[opp_bullet-w][1]-cam[1])**2+(opp_bullets[opp_bullet-w][2]-cam[2])**2)**0.5 < 5:
                     del opp_bullets[opp_bullet-w]
@@ -984,55 +1039,75 @@ class Game_3d:
     
     
 lvl = 10
+money = 0
+spaceships_pl = [1, 0, 0]
+spaceships_price = [0, 10, 30]
 nick_screen()
+
+con = sqlite3.connect("data/players.sqlite")
+cur = con.cursor()
+result = cur.execute("""SELECT sp1, sp2, sp3, money  FROM players
+WHERE nick == '""" + nickname + """'""").fetchall()
+if result[0] != (None, None, None, None):
+    spaceships_pl = result[0][:-1]
+    money = result[0][3]
+con.close()
+
 lvls_base = [[200,6, 60,0],[200,6,60,1], [80,30,30,1], [80,60,6,1], [80,60,3,1]]
 while True:
     start_screen()
     gaming = True
     while gaming:
-        res = chooseD_screen()
-        gaming2 = True
-        if res == 3:
-            while gaming2:
-                spaceships_screen()
-                if gaming2:
+        if spaceships_screen():
+            res = chooseD_screen()
+            gaming2 = True
+            if res == 3:
+                while gaming2:
                     if lvl > 50:
                         res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
                     else:
                         res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, lvls_base[lvl//10-1][0], lvls_base[lvl//10-1][1], lvls_base[lvl//10-1][2], lvls_base[lvl//10-1][3]).res
                     if res_game == 1:
+                        money += int((lvl)**2/100)
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
                         levelpass_screen(False, lvl // 10)
-                        result = cur.execute("""SELECT lvl FROM rec
+                        con = sqlite3.connect("data/players.sqlite")
+                        cur = con.cursor()           
+                        result = cur.execute("""SELECT lvl FROM players
                         WHERE nick == '""" + nickname + """'""").fetchall()
                         if lvl // 10 > result[0][0]:
-                            cur.execute("""UPDATE rec
+                            cur.execute("""UPDATE players
                             SET lvl = """ + str(lvl // 10) + """ 
                             WHERE nick == '""" + nickname + """'""").fetchall()
                             con.commit()
+                        con.close()
                         lvl = 10
-        elif res == 2:
-            while gaming2:
-                spaceships_screen()
-                if gaming2:
+            elif res == 2:
+                while gaming2:
                     if lvl > 50:
                         res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
                     else:
                         res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, lvls_base[lvl//10-1][0], lvls_base[lvl//10-1][1], lvls_base[lvl//10-1][2], lvls_base[lvl//10-1][3]).res
                     if res_game == 1:
+                        money += int((lvl)**2/100)
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
                         levelpass_screen(False, lvl // 10)
-                        result = cur.execute("""SELECT lvl FROM rec
+                        con = sqlite3.connect("data/players.sqlite")
+                        cur = con.cursor()
+                        result = cur.execute("""SELECT lvl FROM players
                         WHERE nick == '""" + nickname + """'""").fetchall()
                         if lvl // 10 > result[0][0]:
-                            cur.execute("""UPDATE rec
+                            cur.execute("""UPDATE players
                             SET lvl = """ + str(lvl // 10) + """ 
                             WHERE nick == '""" + nickname + """'""").fetchall()
                             con.commit()
+                        con.close()
                         lvl = 10
+        else:
+            gaming = False
 pygame.quit()
 con.close()
