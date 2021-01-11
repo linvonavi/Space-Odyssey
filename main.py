@@ -199,8 +199,10 @@ def start_screen():
     con = sqlite3.connect("data/players.sqlite")
     cur = con.cursor()
     result = cur.execute("""SELECT nick FROM players""").fetchall()
+# если имя состоит из цифр, то из базы оно возвращается как число, а не строка и не проходит проверку на существование.
     if (nickname,) not in result:
-        cur.execute("""INSERT INTO players(nick, lvl) VALUES('""" + nickname + """', 1)""").fetchall()
+# явно указали наличие кораблей у нового игрока
+        cur.execute("""INSERT INTO players(nick, sp1, sp2, sp3, lvl) VALUES('""" + nickname + """', 1, 0, 0, 1)""").fetchall()
         con.commit()
     con.close()
     fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
@@ -1058,7 +1060,8 @@ cur = con.cursor()
 result = cur.execute("""SELECT sp1, sp2, sp3, money  FROM players
 WHERE nick == '""" + nickname + """'""").fetchall()
 if len(result) != 0:
-    spaceships_pl = result[0][:-1]
+# преобразовали список кораблей игрока из кортежа в список, так как при покупке этот список изменяется
+    spaceships_pl = list(result[0][:-1])
     money = result[0][3]
 con.close()
 
