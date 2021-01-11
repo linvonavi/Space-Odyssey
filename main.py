@@ -1,4 +1,3 @@
-
 import pygame
 import random 
 import os
@@ -16,12 +15,6 @@ all_sprites = pygame.sprite.Group()
 player_bullet_spr = pygame.sprite.Group()
 opponents_spr = pygame.sprite.Group()
 clock = pygame.time.Clock()
-order = 0
-opponents_armor = [1, 2, 3]
-bullet_force = [1, 2, 3]
-gaming = True
-gaming2 = True
-nickname = ''
 
 
 def load_image(name, colorkey=None):
@@ -94,8 +87,8 @@ class InputText:
                 if event.key == pygame.K_RETURN:
                     if len(self.text) != 0 and self.text != '_':
                         nickname = self.text[:-1]
-                        return 0
                         self.text = ''
+                        return 0
                 elif event.key == pygame.K_BACKSPACE:
                     if len(self.text) > 0:
                         self.text = self.text[:-2] + '_'
@@ -464,7 +457,7 @@ class Opponents(pygame.sprite.Sprite):
 
 class Game_2d:
     def __init__(self, width, height, fps, spaceship_id, opp_id, k_k, f_d, opp_ver, bull_sp, opp_bul_ver, ps):
-        global player_spr
+        global player_spr, hp
         cadr = 1
         mbp = 0
         player = (600, 600)
@@ -550,7 +543,7 @@ class Game_2d:
             if random.randrange(opp_bul_ver) == 0:
                 pos = opponents[random.randrange(len(opponents))][1]
                 if ps ==1:
-                    opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), max(-1, min(1, -(pos[0]-player[0])/(player[1]-pos[1]+20)))])
+                    opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), max(-1, min(1, -(pos[0] - player[0]) / max(player[1] - pos[1] + 20, 0.001)))])
                 else:
                     opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), 0])
 
@@ -638,12 +631,13 @@ class Game_2d:
                 opp_bullets[opp_bullet - w][1] = (opp_bullets[opp_bullet - w][1][0]+opp_bullets[opp_bullet - w][2]*5, opp_bullets[opp_bullet - w][1][1] + 5, opp_bullets[opp_bullet - w][2])
                 if ((opp_bullets[opp_bullet - w][1][0] - player[0]) ** 2 + (
                         opp_bullets[opp_bullet - w][1][1] - player[1]) ** 2) ** 0.5 < 20:
+                    hp -= 1
                     del opp_bullets[opp_bullet - w]
                     w += 1
-                    pygame.mouse.set_visible(True)
-                    self.res = 0
-
-                    running = False
+                    if hp <= 0:
+                        pygame.mouse.set_visible(True)
+                        self.res = 0
+                        running = False
                 elif opp_bullets[opp_bullet - w][1][1] < -50:
                     del opp_bullets[opp_bullet - w]
                     w += 1
@@ -698,6 +692,7 @@ def angle(cam, cam_a, i):
 
 class Game_3d:
     def __init__(self, width, height, fps, spaceship_id, opp_id, k_k, f_d, opp_ver, bull_sp, opp_bul_ver, ps):
+        global hp
         opponents = []
         player_spr = pygame.sprite.Group() 
         opp = [[[-5, 0, 0], [5, 0, 1]],
@@ -781,6 +776,7 @@ class Game_3d:
         cam_a = (0, 0)
         cadr = 1
         pv = 0
+        esc = 0
         killed_ships = 0
         xc = 550
         yc = 350
@@ -802,14 +798,7 @@ class Game_3d:
                     if event.key == 112:
                         pv = 1 - pv
                     elif event.key == pygame.K_ESCAPE:
-                        last_pressed_button = None
-                        pygame.mouse.set_visible(True)
-                        if not menu_screen():
-                            self.res = -1
-                            fps = 0
-                            running = False
-                        else:
-                            break                    
+                        esc = 1
                     elif event.key == pygame.K_LEFT:
                         k = -1
                     elif event.key == pygame.K_RIGHT:
@@ -949,12 +938,13 @@ class Game_3d:
                 xs, ys = angle(cam, cam_a, player_bullets[player_bullet-w])
                 s = ((cam[0] -  player_bullets[player_bullet-w][0])**2 + (cam[1] -  player_bullets[player_bullet-w][1])**2 + (cam[2] -  player_bullets[player_bullet-w][2])**2)**0.5   
                 if s < 300:
-                    pygame.draw.circle(screen, (0,255,0), (int(xc - xs * vc), int(yc - ys * vc)), 10/s**0.4) 
+                    pygame.draw.circle(screen, (0, 255, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(10 / s**0.4))
                 else:
                     screen.fill((0,255,0), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))                    
                 player_bullets[player_bullet-w] = (player_bullets[player_bullet-w][0]+5*math.cos(math.radians(player_bullets[player_bullet-w][3]*0.82)), 
                                                    player_bullets[player_bullet-w][1]-5*math.sin(math.radians(player_bullets[player_bullet-w][3]*0.82)),
-                                                   player_bullets[player_bullet-w][2]+5*math.sin(math.radians(player_bullets[player_bullet-w][4]*0.82)), player_bullets[player_bullet-w][3], player_bullets[player_bullet-w][4])
+                                                   player_bullets[player_bullet-w][2]+5*math.sin(math.radians(player_bullets[player_bullet-w][4]*0.82)),
+                                                   player_bullets[player_bullet-w][3], player_bullets[player_bullet-w][4])
                 if player_bullets[player_bullet-w][0] > cam[0] + 1100 or player_bullets[player_bullet-w][1] < -60 or player_bullets[player_bullet-w][1] > 60 or player_bullets[player_bullet-w][2]< -60 or player_bullets[player_bullet-w][2]> 60:
                     del player_bullets[player_bullet-w]
                     w += 1 
@@ -965,16 +955,18 @@ class Game_3d:
                     cam = [cam[0]-15, cam[1], cam[2]+3]                    
                 xs, ys = angle(cam, cam_a, opp_bullets[opp_bullet-w][:3])
                 s = ((cam[0] - opp_bullets[opp_bullet-w][0])**2 + (cam[1] - opp_bullets[opp_bullet-w][1])**2 + (cam[2] - opp_bullets[opp_bullet-w][2])**2)**0.5   
-                pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), 50/max(s**0.5, 0.01))       
+                pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(50/max(s**0.5, 0.01)))       
                 if pv == 1:
                     cam = [cam[0]+15, cam[1], cam[2]-3]    
                 opp_bullets[opp_bullet-w] = (opp_bullets[opp_bullet-w][0]-1, opp_bullets[opp_bullet-w][1]-opp_bullets[opp_bullet-w][3]*2, opp_bullets[opp_bullet-w][2]-opp_bullets[opp_bullet-w][4]*2, opp_bullets[opp_bullet-w][3], opp_bullets[opp_bullet-w][4]) 
-                if ((opp_bullets[opp_bullet-w][0]-cam[0])**2+(opp_bullets[opp_bullet-w][1]-cam[1])**2+(opp_bullets[opp_bullet-w][2]-cam[2])**2)**0.5 < 5:
+                if ((opp_bullets[opp_bullet - w][0] - cam[0])**2 + (opp_bullets[opp_bullet - w][1] - cam[1])**2 + (opp_bullets[opp_bullet - w][2] - cam[2])**2)**0.5 < 5:
+                    hp -= 1
                     del opp_bullets[opp_bullet-w]
-                    w += 1
-                    self.res = 0
+                    w += 1                    
+                    if hp <= 0:
+                        self.res = 0
+                        running = False
                     
-                    running = False  
                 elif opp_bullets[opp_bullet-w][0] < cam[0] - 50:
                     del opp_bullets[opp_bullet-w]
                     w += 1
@@ -1034,21 +1026,38 @@ class Game_3d:
             pygame.draw.line(screen, (255, 255, 255), (int(xc)+15, int(yc)), (int(xc)+30, int(yc)), 1)
             pygame.draw.line(screen, (255, 255, 255), (int(xc)-15, int(yc)), (int(xc)-30, int(yc)), 1)
             pygame.display.flip()
+            if esc == 1:
+                last_pressed_button = None
+                pygame.mouse.set_visible(True)
+                if not menu_screen():
+                    self.res = -1
+                    fps = 0
+                    running = False
+                else:
+                    break
+                esc = 0
             clock.tick(fps)
     
     
     
 lvl = 10
 money = 0
+hp = 10
 spaceships_pl = [1, 0, 0]
 spaceships_price = [0, 10, 30]
+order = 0
+opponents_armor = [1, 2, 3]
+bullet_force = [1, 2, 3]
+gaming = True
+gaming2 = True
+nickname = ''
 nick_screen()
 
 con = sqlite3.connect("data/players.sqlite")
 cur = con.cursor()
 result = cur.execute("""SELECT sp1, sp2, sp3, money  FROM players
 WHERE nick == '""" + nickname + """'""").fetchall()
-if result[0] != (None, None, None, None):
+if len(result) != 0:
     spaceships_pl = result[0][:-1]
     money = result[0][3]
 con.close()
@@ -1061,17 +1070,19 @@ while True:
         if spaceships_screen():
             res = chooseD_screen()
             gaming2 = True
-            if res == 3:
+            if res == 3:              
                 while gaming2:
                     if lvl > 50:
                         res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
                     else:
-                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, lvls_base[lvl//10-1][0], lvls_base[lvl//10-1][1], lvls_base[lvl//10-1][2], lvls_base[lvl//10-1][3]).res
+                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base[lvl // 10 - 1][0], lvls_base[lvl // 10 - 1][1], lvls_base[lvl // 10 - 1][2], lvls_base[lvl // 10 - 1][3]).res
+                                        
                     if res_game == 1:
-                        money += int((lvl)**2/100)
+                        money += int((lvl)**2 / 100)
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
+                        hp = 10
                         levelpass_screen(False, lvl // 10)
                         con = sqlite3.connect("data/players.sqlite")
                         cur = con.cursor()           
@@ -1084,17 +1095,26 @@ while True:
                             con.commit()
                         con.close()
                         lvl = 10
-            elif res == 2:
+                    con = sqlite3.connect("data/players.sqlite")
+                    cur = con.cursor()
+                    cur.execute("""UPDATE players
+                    SET money = """ + str(money) + """ 
+                    WHERE nick == '""" + nickname + """'""").fetchall()
+                    con.commit()
+                    con.close()                      
+            elif res == 2:      
                 while gaming2:
                     if lvl > 50:
                         res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
                     else:
-                        res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, lvls_base[lvl//10-1][0], lvls_base[lvl//10-1][1], lvls_base[lvl//10-1][2], lvls_base[lvl//10-1][3]).res
+                        res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base[lvl // 10 - 1][0], lvls_base[lvl // 10 - 1][1], lvls_base[lvl // 10 - 1][2], lvls_base[lvl // 10 - 1][3]).res
+                    
                     if res_game == 1:
                         money += int((lvl)**2/100)
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
+                        hp = 10
                         levelpass_screen(False, lvl // 10)
                         con = sqlite3.connect("data/players.sqlite")
                         cur = con.cursor()
@@ -1107,6 +1127,13 @@ while True:
                             con.commit()
                         con.close()
                         lvl = 10
+                    con = sqlite3.connect("data/players.sqlite")
+                    cur = con.cursor()
+                    cur.execute("""UPDATE players
+                    SET money = """ + str(money) + """ 
+                    WHERE nick == '""" + nickname + """'""").fetchall()
+                    con.commit()
+                    con.close()                      
         else:
             gaming = False
 pygame.quit()
