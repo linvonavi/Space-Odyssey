@@ -147,9 +147,10 @@ def records_screen():
     pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
     con = sqlite3.connect("data/players.sqlite")
     cur = con.cursor()
+    # сортировка от большего к меньшему
     result = cur.execute("""SELECT * FROM players
-    ORDER BY lvl""").fetchall()
-    con.close()    
+    ORDER BY lvl DESC""").fetchall()
+    con.close()
     x = (width - 350) // 2
     y = 100
     for elem in result:
