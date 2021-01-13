@@ -154,7 +154,8 @@ def records_screen():
     x = (width - 350) // 2
     y = 100
     for elem in result:
-        result_text = pygame.font.SysFont("Calibri", 30).render(elem[0] + ': уровень ' + str(elem[1]), 1, (255, 255, 255))
+#так как имя пользователя может состять только из цифр, нужно привести его к строке
+        result_text = pygame.font.SysFont("Calibri", 30).render(str(elem[0]) + ': уровень ' + str(elem[1]), 1, (255, 255, 255))
         screen.blit(result_text, (x, y))
         y += 50
         if y > 600:
@@ -201,6 +202,8 @@ def start_screen():
     cur = con.cursor()
     result = cur.execute("""SELECT nick FROM players""").fetchall()
 # если имя состоит из цифр, то из базы оно возвращается как число, а не строка и не проходит проверку на существование.
+    for i in range(len(result)):
+        result[i] = (str(result[i][0]),)
     if (nickname,) not in result:
 # явно указали наличие кораблей у нового игрока
         cur.execute("""INSERT INTO players(nick, sp1, sp2, sp3, lvl) VALUES('""" + nickname + """', 1, 0, 0, 1)""").fetchall()
