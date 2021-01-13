@@ -206,7 +206,9 @@ def start_screen():
         result[i] = (str(result[i][0]),)
     if (nickname,) not in result:
 # явно указали наличие кораблей у нового игрока
-        cur.execute("""INSERT INTO players(nick, sp1, sp2, sp3, lvl) VALUES('""" + nickname + """', 1, 0, 0, 1)""").fetchall()
+# дефолтные значения hp кораблей
+        cur.execute("""INSERT INTO players(nick, sp1, sp2, sp3, lvl, sp1hp, sp2hp, sp3hp) VALUES 
+        ('""" + nickname + """', 1, 0, 0, 1, 10, 12, 14)""").fetchall()
         con.commit()
     con.close()
     fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
@@ -251,7 +253,7 @@ def start_screen():
 
 
 def spaceships_screen():
-    global order, gaming2, money, lvl
+    global order, gaming2, money, lvl, hp
     lvl = 10
     spaceships = {
         0: ['spaceship1_2.png', 'bullet1_1.png', 'Урон: 1'],
@@ -268,8 +270,15 @@ def spaceships_screen():
         
         left_choise = Button(screen, (3, 0, 79), 365, 600, 145, 75, "<<", (255, 255, 255))
         right_choise = Button(screen, (3, 0, 79), 790, 600, 145, 75, ">>", (255, 255, 255))
+        hp_lvl = (shipshp[order] - default_shipshp[order]) // 2
+        hp = shipshp[order]
+        upgrade = Button(screen, (3, 0, 79), 530, 520, 1, 1, "", (255, 255, 255), 1)
         if spaceships_pl[order] == 1:
             choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Выбрать", (255, 255, 255), 50)
+
+            if 0 <= hp_lvl < 2:
+                upgrade = Button(screen, (3, 0, 79), 530, 520, 240, 75, f"Улучшить: {upgrade_price[order][hp_lvl]}",
+                             (255, 255, 255), 25)
         elif cadr == 0:
             choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Купить: "+str(spaceships_price[order])+' монет', (255, 255, 255), 30)
         else:
@@ -277,9 +286,11 @@ def spaceships_screen():
             choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Недостаточно монет", (255, 255, 255), 25) 
             if cadr > 50:
                 cadr = 0
+
         pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
 
         character_text = pygame.font.SysFont("Calibri", 30).render(spaceships[order][2], 1, (255, 255, 255))
+        hp_text = pygame.font.SysFont("Calibri", 30).render(f'Здоровье: {shipshp[order]}', 1, (255, 255, 255))
 
         ship_image = pygame.transform.scale(load_image(spaceships[order][0], -1), (305, 300))
         bullet_image = pygame.transform.scale(load_image(spaceships[order][1], -1), (50, 85))
@@ -287,6 +298,7 @@ def spaceships_screen():
         screen.blit(ship_image, (500, 200))
         screen.blit(bullet_image, (625, 100))
         screen.blit(character_text, (100, 100))
+        screen.blit(hp_text, (100, 130))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -326,6 +338,20 @@ def spaceships_screen():
                 elif pre_button.press(pygame.mouse.get_pos()):
                     gaming2 = False
                     return 0
+                elif upgrade.press(pygame.mouse.get_pos()):
+                    if money >= upgrade_price[order][hp_lvl]:
+                        shipshp[order] += 2
+                        money -= upgrade_price[order][hp_lvl]
+                        con = sqlite3.connect("data/players.sqlite")
+                        cur = con.cursor()
+                        cur.execute("""UPDATE players SET 
+                            sp1hp = """ + str(shipshp[0]) + """, 
+                            sp2hp = """ + str(shipshp[1]) + """,
+                            sp3hp = """ + str(shipshp[2]) + """,
+                            money = """ + str(money) + """
+                            WHERE nick == '""" + nickname + """'""")
+                        con.commit()
+                        con.close()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     order = (order - 1) % 3
@@ -595,6 +621,10 @@ class Game_2d:
                 text = font.render(str(cadr), True, (100, 255, 100))
                 screen.blit(text, (width - 199, 340))
                 font = pygame.font.Font(None, 34)
+            text = font.render("Здоровье", True, (100, 255, 100))
+            screen.blit(text, (width - 199, 370))
+            text = font.render(str(hp), True, (100, 255, 100))
+            screen.blit(text, (width - 199, 400))
 
             w = 0
             for opponent in range(len(opponents)):
@@ -1020,7 +1050,11 @@ class Game_3d:
                 text = font.render(str(cadr), True, (100, 255, 100))
                 screen.blit(text, (width-199, 340))                      
                 font = pygame.font.Font(None, 34)
-            cadr += 1 
+            text = font.render("Здоровье", True, (100, 255, 100))
+            screen.blit(text, (width - 199, 370))
+            text = font.render(str(hp), True, (100, 255, 100))
+            screen.blit(text, (width - 199, 400))
+            cadr += 1
             if killed_ships >= k_k and cadr >= f_d:
                 self.res = 1
                 running = False            
@@ -1048,7 +1082,9 @@ class Game_3d:
     
 lvl = 10
 money = 0
-hp = 10
+default_shipshp = [10, 12, 14]
+shipshp = [10, 12, 14]
+upgrade_price = [[3, 5], [9, 14], [20, 25]]
 spaceships_pl = [1, 0, 0]
 spaceships_price = [0, 10, 30]
 order = 0
@@ -1061,12 +1097,15 @@ nick_screen()
 
 con = sqlite3.connect("data/players.sqlite")
 cur = con.cursor()
-result = cur.execute("""SELECT sp1, sp2, sp3, money  FROM players
+result = cur.execute("""SELECT sp1, sp2, sp3, money, sp1hp, sp2hp, sp3hp  FROM players
 WHERE nick == '""" + nickname + """'""").fetchall()
 if len(result) != 0:
 # преобразовали список кораблей игрока из кортежа в список, так как при покупке этот список изменяется
-    spaceships_pl = list(result[0][:-1])
+    spaceships_pl = list(result[0][:-4])
     money = result[0][3]
+# список со здоровьем кораблей
+    shipshp = list(result[0][4:])
+hp = shipshp[0]
 con.close()
 
 lvls_base = [[200,6, 60,0],[200,6,60,1], [80,30,30,1], [80,60,6,1], [80,60,3,1]]
@@ -1089,7 +1128,8 @@ while True:
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
-                        hp = 10
+# здесь должно быть соответствие hp текущему кораблю и его прокачке
+                        hp = shipshp[order]
                         levelpass_screen(False, lvl // 10)
                         con = sqlite3.connect("data/players.sqlite")
                         cur = con.cursor()           
@@ -1121,7 +1161,7 @@ while True:
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
-                        hp = 10
+                        hp = shipshp[order]
                         levelpass_screen(False, lvl // 10)
                         con = sqlite3.connect("data/players.sqlite")
                         cur = con.cursor()
