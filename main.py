@@ -17,6 +17,7 @@ opponents_spr = pygame.sprite.Group()
 clock = pygame.time.Clock()
 
 
+# Загрузка изображения
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -32,9 +33,9 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
     return image 
 
-
+# Класс: Кнопка
 class Button:
-    def __init__(self, surface, color, x, y, w, h, text, text_color, text_size=0):
+    def __init__(self, button, surface, color, x, y, w, h, text, text_color, text_size=0):
         self.surface = surface
         self.color = color
         self.x = x
@@ -48,8 +49,9 @@ class Button:
         else:
             self.size = text_size
 
-        pygame.draw.rect(self.surface, self.color, (self.x, self.y, self.width, self.height), 0)
-        new_text = pygame.font.SysFont("Calibri", self.size).render(self.text, 1, self.text_color)
+        fon = pygame.transform.scale(load_image(button), (self.width, self.height))
+        screen.blit(fon, (self.x, self.y))
+        new_text = pygame.font.Font('data/grammara.ttf', self.size).render(self.text, 1, self.text_color)
         surface.blit(new_text, ((self.x + self.width // 2) - new_text.get_width() // 2,
                                 (self.y + self.height // 2) - new_text.get_height() // 2))
 
@@ -58,21 +60,21 @@ class Button:
             return True
         return False
 
-
+# Ввод текста
 class InputText:
     def __init__(self, color, x, y, w, h, text_size=80, text=''):
         self.rect = pygame.Rect(x, y, w, h)
         self.color = color
         self.text = text
         self.size = text_size
-        self.txt_surface = pygame.font.SysFont("Calibri", self.size).render(self.text, True, self.color)
+        self.txt_surface = pygame.font.Font('data/grammara.ttf', self.size).render(self.text, True, self.color)
         self.active = False
 
     def text_event(self, event):
         global nickname
-        pygame.draw.rect(screen, (3, 0, 79), self.rect, 0)
+        pygame.draw.rect(screen, (0, 0, 50), self.rect, 0)
         pygame.draw.rect(screen, self.color, self.rect, 2)
-        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+20))
+        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+25))
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(event.pos):
                 self.active = not self.active
@@ -95,18 +97,18 @@ class InputText:
                 else:
                     if len(self.text) < 20:
                         self.text = self.text[:-1] + event.unicode + '_'
-        self.txt_surface = pygame.font.SysFont("Calibri", self.size).render(self.text, True, self.color)
+        self.txt_surface = pygame.font.SysFont('data/grammara.ttf', self.size).render(self.text, True, self.color)
 
 
 def terminate():
     pygame.quit()
     sys.exit()
 
-
+# Ввод имени
 def nick_screen():
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
+    fon = pygame.transform.scale(load_image('space.jpg'), (width, height))
     screen.blit(fon, (0, 0))
-    name_text = pygame.font.SysFont("Calibri", 50).render(('Введите имя:'), 1, (255, 255, 255))
+    name_text = pygame.font.Font('data/grammara.ttf', 50).render(('Введите имя:'), 1, (255, 255, 255))
     screen.blit(name_text, (300, 225))
     nick = InputText((255, 255, 255), 300, 300, 700, 100)
     while True:
@@ -118,42 +120,20 @@ def nick_screen():
         pygame.display.flip()
         clock.tick(10)
 
-
-def chooseD_screen():
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
-    screen.blit(fon, (0, 0))
-    d2_button = Button(screen, (3, 0, 79), (width - 700) // 4, (height - 200) // 2, 350, 200, "2D", (255, 255, 255))
-    d3_button = Button(screen, (3, 0, 79), width - (width - 700) // 4 - 350, (height - 200) // 2, 350, 200,
-                          "3D", (255, 255, 255))
-    pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if d2_button.press(pygame.mouse.get_pos()):
-                    return 2
-                elif d3_button.press(pygame.mouse.get_pos()):
-                    return 3
-                elif pre_button.press(pygame.mouse.get_pos()):
-                    return
-        pygame.display.flip()
-        clock.tick(50)
-
-
+# Рекорды
 def records_screen():
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
+    fon = pygame.transform.scale(load_image('space.jpg'), (width, height))
     screen.blit(fon, (0, 0))
-    pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
+    pre_button = Button('button_small.png', screen, (3, 0, 79), 25, height - 85, 100, 60, "Назад", (255, 255, 255), 30)
     con = sqlite3.connect("data/players.sqlite")
     cur = con.cursor()
     result = cur.execute("""SELECT * FROM players
-    ORDER BY lvl""").fetchall()
+    ORDER BY lvl DESC""").fetchall()
     con.close()    
     x = (width - 350) // 2
     y = 100
     for elem in result:
-        result_text = pygame.font.SysFont("Calibri", 30).render(elem[0] + ': уровень ' + str(elem[1]), 1, (255, 255, 255))
+        result_text = pygame.font.SysFont('data/grammara.ttf', 40).render(str(elem[0]) + ': уровень ' + str(elem[1]), 1, (255, 255, 255))
         screen.blit(result_text, (x, y))
         y += 50
         if y > 600:
@@ -168,19 +148,19 @@ def records_screen():
         pygame.display.flip()
         clock.tick(50)
 
-
+# Правила
 def rules_screen():
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
+    fon = pygame.transform.scale(load_image('space.jpg'), (width, height))
     screen.blit(fon, (0, 0))
-    pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
+    pre_button = Button('button_small.png', screen, (3, 0, 79), 25, height - 85, 100, 60, "Назад", (255, 255, 255), 30)
     f = open('data/rules.txt', encoding="utf8")
-    x = 50
-    y = 50
+    x = 150
+    y = 20
     for line in f:
         s = ''
         for elem in line.rstrip("\n"):
             s += elem
-        rules_text = pygame.font.SysFont("Calibri", 30).render(s, 1, (255, 255, 255))
+        rules_text = pygame.font.SysFont('data/grammara.ttf', 30).render(s, 1, (255, 255, 255))
         screen.blit(rules_text, (x, y))
         y += 40
     f.close()
@@ -194,22 +174,43 @@ def rules_screen():
         pygame.display.flip()
         clock.tick(50)
 
-
+# Главное меню
 def start_screen():
+    ship_x = random.choice([750, 900, 500])
+    ship_id = 0
+    shipsize_x = random.choice([200, 400, 350])
+    ship_y = 700 + shipsize_x
     con = sqlite3.connect("data/players.sqlite")
     cur = con.cursor()
     result = cur.execute("""SELECT nick FROM players""").fetchall()
+    for i in range(len(result)):
+        result[i] = (str(result[i][0]),)
     if (nickname,) not in result:
-        cur.execute("""INSERT INTO players(nick, lvl) VALUES('""" + nickname + """', 1)""").fetchall()
+        cur.execute("""INSERT INTO players(nick, sp1, sp2, sp3, lvl, sp1hp, sp2hp, sp3hp) VALUES 
+                ('""" + nickname + """', 1, 0, 0, 1, 10, 12, 14)""").fetchall()
         con.commit()
     con.close()
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
-    screen.blit(fon, (0, 0))
-    start_button = Button(screen, (3, 0, 79), (width - 350) // 2, 260, 350, 100, "Начать", (255, 255, 255), 50)
-    records_button = Button(screen, (3, 0, 79), (width - 350) // 2, 370, 350, 100, "Рекорды", (255, 255, 255), 50)
-    rules_button = Button(screen, (3, 0, 79), (width - 350) // 2, 480, 350, 100, "Об игре", (255, 255, 255), 50)
-    exit_button = Button(screen, (3, 0, 79), (width - 350) // 2, 590, 350, 100, "Выход", (255, 255, 255), 50)
+    fon = pygame.transform.scale(load_image('space.jpg'), (width, height))
+    ship_image = pygame.transform.scale(load_image('spaceship' + str(ship_id + 1) + '_2.png'), (shipsize_x, shipsize_x))
     while True:
+        screen.blit(fon, (0, 0))
+        start_button = Button('button.png', screen, (3, 0, 79), 100, 120, 350, 100, "Старт",
+                              (255, 255, 255), 50)
+        records_button = Button('button.png', screen, (3, 0, 79), 100, 255, 350, 100, "Рекорды",
+                                (255, 255, 255), 50)
+        rules_button = Button('button.png', screen, (3, 0, 79), 100, 390, 350, 100, "Об игре",
+                              (255, 255, 255), 50)
+        exit_button = Button('button.png', screen, (3, 0, 79), 100, 525, 350, 100, "Выход",
+                             (255, 255, 255), 50)
+        screen.blit(ship_image, (ship_x, ship_y))
+        ship_y -= 5
+        if ship_y == 0 - shipsize_x:
+            ship_x = random.choice([750, 900, 500])
+            ship_id = (ship_id + 1) % 3
+            shipsize_x = random.choice([200, 400, 300])
+            ship_y = 700 + shipsize_x
+            ship_image = pygame.transform.scale(load_image('spaceship' + str(ship_id + 1) + '_2.png'),
+                                                (shipsize_x, shipsize_x))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -219,68 +220,109 @@ def start_screen():
                 elif records_button.press(pygame.mouse.get_pos()):
                     records_screen()
                     screen.blit(fon, (0, 0))
-                    start_button = Button(screen, (3, 0, 79), (width - 350) // 2, 260, 350, 100, "Начать",
+                    start_button = Button('button.png', screen, (3, 0, 79), 100, 120, 350, 100, "Старт",
                                           (255, 255, 255), 50)
-                    records_button = Button(screen, (3, 0, 79), (width - 350) // 2, 370, 350, 100, "Рекорды",
+                    records_button = Button('button.png', screen, (3, 0, 79), 100, 255, 350, 100, "Рекорды",
                                             (255, 255, 255), 50)
-                    rules_button = Button(screen, (3, 0, 79), (width - 350) // 2, 480, 350, 100, "Об игре",
+                    rules_button = Button('button.png', screen, (3, 0, 79), 100, 390, 350, 100, "Об игре",
                                           (255, 255, 255), 50)
-                    exit_button = Button(screen, (3, 0, 79), (width - 350) // 2, 590, 350, 100, "Выход",
+                    exit_button = Button('button.png', screen, (3, 0, 79), 100, 525, 350, 100, "Выход",
                                          (255, 255, 255), 50)
                 elif rules_button.press(pygame.mouse.get_pos()):
                     rules_screen()
                     screen.blit(fon, (0, 0))
-                    start_button = Button(screen, (3, 0, 79), (width - 350) // 2, 260, 350, 100, "Начать",
+                    start_button = Button('button.png', screen, (3, 0, 79), 100, 120, 350, 100, "Старт",
                                           (255, 255, 255), 50)
-                    records_button = Button(screen, (3, 0, 79), (width - 350) // 2, 370, 350, 100, "Рекорды",
+                    records_button = Button('button.png', screen, (3, 0, 79), 100, 255, 350, 100, "Рекорды",
                                             (255, 255, 255), 50)
-                    rules_button = Button(screen, (3, 0, 79), (width - 350) // 2, 480, 350, 100, "Об игре",
+                    rules_button = Button('button.png', screen, (3, 0, 79), 100, 390, 350, 100, "Об игре",
                                           (255, 255, 255), 50)
-                    exit_button = Button(screen, (3, 0, 79), (width - 350) // 2, 590, 350, 100, "Выход",
+                    exit_button = Button('button.png', screen, (3, 0, 79), 100, 525, 350, 100, "Выход",
                                          (255, 255, 255), 50)
                 elif exit_button.press(pygame.mouse.get_pos()):
                     terminate()
         pygame.display.flip()
         clock.tick(50)
 
-
+# Выбор корабля
 def spaceships_screen():
-    global order, gaming2, money, lvl
+    global order, gaming2, money, lvl, press_2d, press_3d, hp
     lvl = 10
     spaceships = {
-        0: ['spaceship1_2.png', 'bullet1_1.png', 'Урон: 1'],
-        1: ['spaceship2_2.png', 'bullet2_1.png', 'Урон: 2'],
-        2: ['spaceship3_2.png', 'bullet3_1.png', 'Урон: 3']
+        0: ['spaceship1_2.png'],
+        1: ['spaceship2_2.png'],
+        2: ['spaceship3_2.png']
     }
     cadr = 0
+    coin = 0
+
     while True:
         fon = pygame.transform.scale(load_image('station.jpg'), (width, height))
         screen.blit(fon, (0, 0))
-        text = f'Монет: {int(money)}'
-        character_text = pygame.font.SysFont("Calibri", 40).render(text, 1, (255, 255, 255))
-        screen.blit(character_text, (1100, 30))
+        coins = pygame.transform.scale(load_image('coin' + str(coin) + '.png'), (60, 60))
+        screen.blit(coins, (40, 20))
+        text = f' x {int(money)}'
+        character_text = pygame.font.Font('data/grammara.ttf', 40).render(text, 1, (255, 255, 255))
+        screen.blit(character_text, (100, 30))
         
-        left_choise = Button(screen, (3, 0, 79), 365, 600, 145, 75, "<<", (255, 255, 255))
-        right_choise = Button(screen, (3, 0, 79), 790, 600, 145, 75, ">>", (255, 255, 255))
+        left_choise = Button('button_small.png', screen, (3, 0, 79), 400, 600, 75, 75, "<<", (255, 255, 255), 50)
+        right_choise = Button('button_small.png', screen, (3, 0, 79), 825, 600, 75, 75, ">>", (255, 255, 255), 50)
+
+        hp_lvl = (shipshp[order] - default_shipshp[order]) // 2
+        hp = shipshp[order]
+
+        upgrade = Button('button_small.png', screen, (3, 0, 79), 1, 1, 1, 1, "", (255, 255, 255), 30)
+
         if spaceships_pl[order] == 1:
-            choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Выбрать", (255, 255, 255), 50)
+            choise = Button('button.png', screen, (3, 0, 79), 485, 600, 330, 75, "Выбрать", (255, 255, 255), 30)
+            if 0 <= hp_lvl <= 1:
+                up_text = pygame.font.Font('data/grammara.ttf', 30).render(f"{upgrade_price[order][hp_lvl]} монет", 1, (255, 255, 255))
+            else:
+                up_text = pygame.font.Font('data/grammara.ttf', 30).render('макс ур', 1, (255, 255, 255))
         elif cadr == 0:
-            choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Купить: "+str(spaceships_price[order])+' монет', (255, 255, 255), 30)
+            choise = Button('button.png', screen, (3, 0, 79), 485, 600, 330, 75, "Купить: "+str(spaceships_price[order])+' монет', (255, 255, 255), 30)
+            up_text = pygame.font.Font('data/grammara.ttf', 30).render(f"{upgrade_price[order][0]} монет", 1, (255, 255, 255))
         else:
             cadr += 1
-            choise = Button(screen, (3, 0, 79), 530, 600, 240, 75, "Недостаточно монет", (255, 255, 255), 25) 
+            choise = Button('button.png', screen, (3, 0, 79), 485, 600, 330, 75, "Недостаточно монет", (255, 255, 255), 30)
+            up_text = pygame.font.Font('data/grammara.ttf', 30).render(f"{upgrade_price[order][0]} монет", 1, (255, 255, 255))
             if cadr > 50:
                 cadr = 0
-        pre_button = Button(screen, (3, 0, 79), 25, height - 75, 175, 50, "Назад", (255, 255, 255))
+        pre_button = Button('button_small.png', screen, (3, 0, 79), 25, height - 85, 100, 60, "Назад", (255, 255, 255), 30)
 
-        character_text = pygame.font.SysFont("Calibri", 30).render(spaceships[order][2], 1, (255, 255, 255))
+        text_2d = pygame.font.Font('data/grammara.ttf', 120).render('2D', 1, (255, 255, 255))
+        text_3d = pygame.font.Font('data/grammara.ttf', 120).render('3D', 1, (255, 255, 255))
 
-        ship_image = pygame.transform.scale(load_image(spaceships[order][0], -1), (305, 300))
-        bullet_image = pygame.transform.scale(load_image(spaceships[order][1], -1), (50, 85))
-        
-        screen.blit(ship_image, (500, 200))
-        screen.blit(bullet_image, (625, 100))
-        screen.blit(character_text, (100, 100))
+        ship_image = pygame.transform.scale(load_image(spaceships[order][0]), (400, 400))
+        hp_text = pygame.font.SysFont('data/grammara.ttf', 50).render(f'{shipshp[order]} HP', 1, (255, 255, 255))
+        dmg_text = pygame.font.SysFont('data/grammara.ttf', 40).render(f'Урон: {bullet_force[order]}', 1, (255, 255, 255))
+
+        screen.blit(ship_image, (450, 150))
+        screen.blit(text_2d, (175, 200))
+        screen.blit(text_3d, (175, 400))
+        screen.blit(hp_text, (1025, 175))
+        screen.blit(dmg_text, (435, 160))
+        screen.blit(up_text, (1025, 500))
+
+        if spaceships_pl[order] == 1:
+            if hp_lvl == 0:
+                pygame.draw.rect(screen, (10, 50, 200), (1015, 410, 120, 70))
+            elif hp_lvl == 1:
+                pygame.draw.rect(screen, (10, 50, 200), (1015, 320, 120, 70))
+                pygame.draw.rect(screen, (10, 50, 200), (1015, 410, 120, 70))
+            else:
+                pygame.draw.rect(screen, (10, 50, 200), (1015, 230, 120, 70))
+                pygame.draw.rect(screen, (10, 50, 200), (1015, 320, 120, 70))
+                pygame.draw.rect(screen, (10, 50, 200), (1015, 410, 120, 70))
+
+        if press_2d:
+            pygame.draw.rect(screen, (255, 255, 255), (150, 195, 160, 125), 3)
+        elif press_3d:
+            pygame.draw.rect(screen, (255, 255, 255), (150, 395, 160, 125), 3)
+
+        pygame.draw.rect(screen, (255, 255, 255), (1010, 225, 130, 80), 3)
+        pygame.draw.rect(screen, (255, 255, 255), (1010, 315, 130, 80), 3)
+        pygame.draw.rect(screen, (255, 255, 255), (1010, 405, 130, 80), 3)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -290,9 +332,22 @@ def spaceships_screen():
                     order = (order - 1) % 3
                 elif right_choise.press(pygame.mouse.get_pos()):
                     order = (order + 1) % 3
+                elif 1010 < pygame.mouse.get_pos()[0] < 1140 and 495 < pygame.mouse.get_pos()[1] < 535 and spaceships_pl[order] == 1:
+                    if money >= upgrade_price[order][hp_lvl]:
+                        shipshp[order] += 2
+                        money -= upgrade_price[order][hp_lvl]
+                        con = sqlite3.connect("data/players.sqlite")
+                        cur = con.cursor()
+                        cur.execute("""UPDATE players SET 
+                                            sp1hp = """ + str(shipshp[0]) + """, 
+                                            sp2hp = """ + str(shipshp[1]) + """,
+                                            sp3hp = """ + str(shipshp[2]) + """,
+                                            money = """ + str(money) + """
+                                            WHERE nick == '""" + nickname + """'""")
+                        con.commit()
+                        con.close()
                 elif choise.press(pygame.mouse.get_pos()):
                     if spaceships_pl[order] == 0 and money >= spaceships_price[order]:
-                        gaming2 = True
                         money -= spaceships_price[order]
                         spaceships_pl[order] = 1
                         con = sqlite3.connect("data/players.sqlite")
@@ -320,21 +375,26 @@ def spaceships_screen():
                 elif pre_button.press(pygame.mouse.get_pos()):
                     gaming2 = False
                     return 0
+                elif 150 < pygame.mouse.get_pos()[0] < 310 and 195 < pygame.mouse.get_pos()[1] < 320:
+                    press_2d = True
+                    press_3d = False
+                elif 150 < pygame.mouse.get_pos()[0] < 310 and 395 < pygame.mouse.get_pos()[1] < 520:
+                    press_3d = True
+                    press_2d = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     order = (order - 1) % 3
                 elif event.key == pygame.K_RIGHT:
                     order = (order + 1) % 3
+        coin = (coin + 1) % 8
         pygame.display.flip()
-        clock.tick(50)
+        clock.tick(20)
 
-
+# Пауза
 def menu_screen():
     global gaming, gaming2
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
-    screen.blit(fon, (0, 0))
-    continue_button = Button(screen, (3, 0, 79), (width - 350) // 2, 300, 350, 100, "Продолжить", (255, 255, 255), 50)
-    pre_button = Button(screen, (3, 0, 79), (width - 350) // 2, 450, 350, 100, "Выход", (255, 255, 255), 50)
+    continue_button = Button('button.png', screen, (3, 0, 79), (width - 350) // 2, 230, 350, 100, "Продолжить", (255, 255, 255), 50)
+    pre_button = Button('button.png', screen, (3, 0, 79), (width - 350) // 2, 350, 350, 100, "Выход", (255, 255, 255), 50)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -349,30 +409,29 @@ def menu_screen():
         pygame.display.flip()
         clock.tick(50)
 
-
-
+# Результат прохождения уровня
 def levelpass_screen(passed, lvl):
     global gaming, gaming2
 
-    fon = pygame.transform.scale(load_image('space.jpg'), (width, 2312))
+    fon = pygame.transform.scale(load_image('space.jpg'), (width, height))
     screen.blit(fon, (0, 0))
 
     if passed:
-        text = f'Уровень {lvl} пройден!'
+        text = f'Уровень №{lvl} пройден!'
         text_continue = 'Продолжить'
-        character_text = pygame.font.SysFont("Calibri", 80).render(text, 1, (255, 255, 255))
-        screen.blit(character_text, (325, 80))
-        text = f'Вы заработали монет: {int(((lvl)*10)**2/100)}'
-        character_text = pygame.font.SysFont("Calibri", 80).render(text, 1, (255, 255, 255))
-        screen.blit(character_text, (300, 170))
+        character_text = pygame.font.Font('data/grammara.ttf', 40).render(text, 1, (255, 255, 255))
+        screen.blit(character_text, (475, 90))
+        text = f'Монет заработано: {int(((lvl)*10)**2/100)}'
+        character_text = pygame.font.Font('data/grammara.ttf', 40).render(text, 1, (255, 255, 255))
+        screen.blit(character_text, (475, 140))
     else:
-        text = f'Уровень {lvl} не пройден!'
+        text = f'Уровень №{lvl} не пройден!'
         text_continue = 'Заново'
-        character_text = pygame.font.SysFont("Calibri", 80).render(text, 1, (255, 255, 255))
-        screen.blit(character_text, (275, 100))
+        character_text = pygame.font.Font('data/grammara.ttf', 40).render(text, 1, (255, 255, 255))
+        screen.blit(character_text, (450, 110))
 
-    continue_button = Button(screen, (3, 0, 79), (width - 350) // 2, 280, 350, 100, text_continue, (255, 255, 255), 50)
-    pre_button = Button(screen, (3, 0, 79), (width - 350) // 2, 420, 350, 100, "Меню", (255, 255, 255), 50)
+    continue_button = Button('button.png', screen, (3, 0, 79), (width - 350) // 2, 230, 350, 100, text_continue, (255, 255, 255), 50)
+    pre_button = Button('button.png', screen, (3, 0, 79), (width - 350) // 2, 350, 350, 100, "Меню", (255, 255, 255), 50)
 
     while True:
         for event in pygame.event.get():
@@ -391,11 +450,11 @@ def levelpass_screen(passed, lvl):
         pygame.display.flip()
         clock.tick(50)
 
-
+# Создание спрайтов
 class Player_2d(pygame.sprite.Sprite):
     def __init__(self, spaceship_id, player):
         super().__init__(all_sprites)
-        image = load_image("spaceship" + str(spaceship_id) + ".png", -1)
+        image = load_image("spaceship" + str(spaceship_id) + ".png")
         self.image = image
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
@@ -454,7 +513,7 @@ class Opponents(pygame.sprite.Sprite):
     def update(self, x, y):
         self.rect = self.rect.move(x, y)
 
-
+# Игра 2D
 class Game_2d:
     def __init__(self, width, height, fps, spaceship_id, opp_id, k_k, f_d, opp_ver, bull_sp, opp_bul_ver, ps):
         global player_spr, hp
@@ -464,7 +523,7 @@ class Game_2d:
         player_spr = pygame.sprite.Group()
         Player_2d(spaceship_id, player)
         opponents_spr = pygame.sprite.Group()
-        fon = pygame.transform.scale(load_image('space.jpg'), (width - 200, 2312))
+        fon = pygame.transform.scale(load_image('space2D.jpg'), (width - 200, 2312))
         killed_ships = 0
         opponents = []
         player_bullets = []
@@ -473,6 +532,7 @@ class Game_2d:
         running = True
         clock = pygame.time.Clock()
         while running:
+            # Обработка событий
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -509,7 +569,7 @@ class Game_2d:
 
             if not running:
                 break
-
+            # Перемещение
             if last_pressed_button != None and mbp == 0:
                 event = last_pressed_button
                 if event.type == pygame.KEYDOWN and event.key == 1073741906:
@@ -528,7 +588,7 @@ class Game_2d:
                     s = min(10, player[0] - 32)
                     player = (player[0] - s, player[1])
                     player_spr.update(-s, 0)
-
+            # Добавление пуль и врагов
             screen.fill(pygame.Color('black'))
             screen.blit(fon, (0, cadr % (2312)))
             screen.blit(fon, (0, cadr % (2312) - 2312))
@@ -546,50 +606,36 @@ class Game_2d:
                     opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), max(-1, min(1, -(pos[0] - player[0]) / max(player[1] - pos[1] + 20, 0.001)))])
                 else:
                     opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), 0])
-
+            # Вывод информации
             pygame.draw.line(screen, (255, 255, 255), (width - 200, 0), (width - 200, height), 1)
-            font = pygame.font.Font(None, 38)
-            text = font.render("FPS: " + str(int(clock.get_fps())), True, (100, 255, 100))
-            screen.blit(text, (width - 199, 10))
-            font = pygame.font.Font(None, 38)
-            text = font.render("Цель:", True, (100, 255, 100))
-            screen.blit(text, (width - 199, 60))
-            font = pygame.font.Font(None, 34)
-            text = font.render("Нанести урон", True, (100, 255, 100))
-            screen.blit(text, (width - 199, 100))
-            font = pygame.font.Font(None, 34)
-            text = font.render(str(k_k), True, (100, 255, 100))
-            screen.blit(text, (width - 199, 130))
+            font = pygame.font.Font('data/grammara.ttf', 38)
+            text = font.render("FPS: " + str(int(clock.get_fps())), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 10))
+            font = pygame.font.Font('data/grammara.ttf', 38)
+            text = font.render("   Цель:", True, (255, 255, 255))
+            screen.blit(text, (width - 195, 100))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("Урон " + str(k_k), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 140))
             player_spr.draw(screen)
-            if f_d < 100000:
-                text = font.render("Пролететь " + str(f_d), True, (100, 255, 100))
-                screen.blit(text, (width - 199, 160))
-                font = pygame.font.Font(None, 34)
-            else:
-                text = font.render("Пролететь", True, (100, 255, 100))
-                screen.blit(text, (width - 199, 160))
-                font = pygame.font.Font(None, 34)
-                text = font.render(str(f_d), True, (100, 255, 100))
-                screen.blit(text, (width - 199, 190))
-                font = pygame.font.Font(None, 34)
-            text = font.render("Нанесён урон", True, (100, 255, 100))
-            screen.blit(text, (width - 199, 250))
-            font = pygame.font.Font(None, 34)
-            text = font.render(str(killed_ships), True, (100, 255, 100))
-            screen.blit(text, (width - 199, 280))
+            text = font.render("Пройти " + str(f_d), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 170))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("  Прогресс:", True, (255, 255, 255))
+            screen.blit(text, (width - 195, 290))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("Урон " + str(killed_ships), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 320))
             player_spr.draw(screen)
-            if cadr < 100000:
-                text = font.render("Пройдено " + str(cadr), True, (100, 255, 100))
-                screen.blit(text, (width - 199, 310))
-                font = pygame.font.Font(None, 34)
+            if cadr < f_d:
+                text = font.render("Пройдено " + str(cadr), True, (255, 255, 255))
+                screen.blit(text, (width - 195, 350))
             else:
-                text = font.render("Пройдено", True, (100, 255, 100))
-                screen.blit(text, (width - 199, 310))
-                font = pygame.font.Font(None, 34)
-                text = font.render(str(cadr), True, (100, 255, 100))
-                screen.blit(text, (width - 199, 340))
-                font = pygame.font.Font(None, 34)
-
+                text = font.render("Пройдено " + str(f_d), True, (255, 255, 255))
+                screen.blit(text, (width - 195, 350))
+            text = font.render("Здоровье " + str(hp), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 470))
+            # Поверка столкновений врагов с пулями игрока
             w = 0
             for opponent in range(len(opponents)):
                 opponents[opponent - w][0].opponents_spr.update(0, 1)
@@ -616,6 +662,7 @@ class Game_2d:
                 if f == 0 and opponents[opponent - w][1][1] > height + 50:
                     del opponents[opponent - w]
                     w += 1
+            # Перемещение и рисование пуль игрока
             w = 0
             for player_bullet in range(len(player_bullets)):
                 player_bullets[player_bullet - w][0].player_bullet_spr.update(0, -5)
@@ -624,6 +671,7 @@ class Game_2d:
                 if player_bullets[player_bullet - w][1][1] < -50:
                     del player_bullets[player_bullet - w]
                     w += 1
+            # Проверка столкновения пуль врагов с игроком
             w = 0
             for opp_bullet in range(len(opp_bullets)):
                 opp_bullets[opp_bullet - w][0].opp_bullet_spr.update(opp_bullets[opp_bullet - w][2]*5, 5)
@@ -651,7 +699,7 @@ class Game_2d:
 
             clock.tick(fps)
 
-
+# Нахождение угла между вектрами
 def angle_trunc(a):
     while a < 0.0:
         a += math.pi * 2
@@ -665,36 +713,34 @@ def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
 
 
 def angle(cam, cam_a, i):
-    s = ((cam[0] - i[0]) ** 2 + (cam[1] - i[1]) ** 2 + (cam[2] - i[2]) ** 2) ** 0.5  # расстояние
-    # рисование каждой точки в поле зрения
-    if s < 2000:
-        gs = ((cam[0] - i[0]) ** 2 + (cam[1] - i[1]) ** 2) ** 0.5  # расстояние по горизонтальной плоскости
-        if (cam[0], cam[1]) != (i[0], i[1]):
-            xs = cam_a[0] - (360 - math.degrees(getAngleBetweenPoints(cam[0], cam[1], i[0], i[1])))
-            if xs > 0:
-                xs1 = -(360 - xs)
-            else:
-                xs1 = 360 + xs
-                if abs(xs1) < abs(xs):
-                    xs = xs1
+    gs = ((cam[0] - i[0]) ** 2 + (cam[1] - i[1]) ** 2) ** 0.5  # расстояние по горизонтальной плоскости
+    if (cam[0], cam[1]) != (i[0], i[1]):
+        xs = cam_a[0] - (360 - math.degrees(getAngleBetweenPoints(cam[0], cam[1], i[0], i[1])))
+        if xs > 0:
+            xs1 = -(360 - xs)
         else:
-            xs = 0
-        ys = math.degrees(getAngleBetweenPoints(0, cam[2], gs, i[2])) - cam_a[1]
-        if ys > 0:
-            ys1 = -(360 - ys)
-        else:
-            ys1 = 360 + ys
-        if abs(ys1) < abs(ys):
-            ys = ys1
-        return (xs, ys)
-    return None
+            xs1 = 360 + xs
+            if abs(xs1) < abs(xs):
+                xs = xs1
+    else:
+        xs = 0
+    ys = math.degrees(getAngleBetweenPoints(0, cam[2], gs, i[2])) - cam_a[1]
+    if ys > 0:
+        ys1 = -(360 - ys)
+    else:
+        ys1 = 360 + ys
+    if abs(ys1) < abs(ys):
+        ys = ys1
+    return (xs, ys)
 
 
+# Игра 3D
 class Game_3d:
     def __init__(self, width, height, fps, spaceship_id, opp_id, k_k, f_d, opp_ver, bull_sp, opp_bul_ver, ps):
-        global hp
+        global hp, pv, pr
         opponents = []
         player_spr = pygame.sprite.Group() 
+        # Модель корабля противника
         opp = [[[-5, 0, 0], [5, 0, 1]],
                [[-5, 0, 0], [5, 0, -1]],
                [[-5, 0, 0], [5, 1, 0]],
@@ -769,13 +815,23 @@ class Game_3d:
                [[3, -4.5, 2.2], [-1, -4.5, 2.2]],                
                ]
         player_bullets = []
-        opp_bullets = []   
+        opp_bullets = [] 
+        zv = []
+        for i in range(2000):
+            zvp = random.randrange(40)
+            if zvp == 0:
+                zv.append([i, random.randrange(601)-300, random.randrange(201)-300])
+            elif zvp == 1:
+                zv.append([i, random.randrange(601)-300, random.randrange(201)+100])
+            elif zvp == 2:
+                zv.append([i, random.randrange(201)+100, random.randrange(601)-300])
+            elif zvp == 3:
+                zv.append([i, random.randrange(201)-300, random.randrange(601)-300])            
         self.res = 0
         # данные наблюдателя - позиция и угол
         cam = (0, 0, 0)
         cam_a = (0, 0)
         cadr = 1
-        pv = 0
         esc = 0
         killed_ships = 0
         xc = 550
@@ -788,71 +844,93 @@ class Game_3d:
         # угол обзора в градусах
         vax = 90
         vc = xc / vax * 2
-        
         while running:
-             # перемещение
+            # Обработка событий          
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == 112:
+                    if event.key == 114:
                         pv = 1 - pv
                     elif event.key == pygame.K_ESCAPE:
                         esc = 1
                     elif event.key == pygame.K_LEFT:
-                        k = -1
-                    elif event.key == pygame.K_RIGHT:
-                        k = 1
-                    elif event.key == pygame.K_UP:
-                        k = 3
-                    elif event.key == pygame.K_DOWN:
-                        k = -3
-                    elif event.key == 97:
                         k = 4
-                    elif event.key == 100:
+                    elif event.key == pygame.K_RIGHT:
                         k = -4
-                    elif event.key == 119:
-                        k = 5 
-                    elif event.key == 115:
+                    elif event.key == pygame.K_UP:
+                        k = 5
+                    elif event.key == pygame.K_DOWN:
                         k = -5
+                    elif event.key == 97:
+                        k = -1
+                    elif event.key == 100:
+                        k = 1
+                    elif event.key == 119:
+                        k = 3 
+                    elif event.key == 115:
+                        k = -3
+                    elif event.key == 101:
+                        pr = 1 - pr
                 elif event.type == pygame.KEYUP:
                     k = 0
-                elif event.type == pygame.MOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN:   
                     mbd = 1- mbd
                 elif mbd == 1 and event.type == pygame.MOUSEMOTION:
                     cam_a = (min(45, max(-45, cam_a[0] + event.rel[0]*vcm)), min(45, max(-45, cam_a[1] - event.rel[1]*vcm)))
         
             screen.fill(pygame.Color('black'))
             cam = (cam[0]+1, cam[1], cam[2])
-            
+            # Добавление звёзд
+            zvp = random.randrange(40)
+            if zvp == 0:
+                zv.append([cam[0]+2000, random.randrange(601)-300, random.randrange(201)-300])
+            elif zvp == 1:
+                zv.append([cam[0]+2000, random.randrange(601)-300, random.randrange(201)+100])
+            elif zvp == 2:
+                zv.append([cam[0]+2000, random.randrange(201)+100, random.randrange(601)-300])
+            elif zvp == 3:
+                zv.append([cam[0]+2000, random.randrange(201)-300, random.randrange(601)-300])
+            if len(zv) > 0 and zv[0][0]<cam[0]:
+                del zv[0]
+            if pv == 1: 
+                cam = [cam[0]-15, cam[1], cam[2]+1]  
+            for i in zv:
+                xs, ys = angle(cam, cam_a, i)
+                s = ((cam[0] -  i[0])**2 + (cam[1] -  i[1])**2 + (cam[2] -  i[2])**2)**0.5   
+                if s < 1250:
+                    pygame.draw.circle(screen, (255, 255, 255), (int(xc - xs * vc), int(yc - ys * vc)), int(max(1, 300 / s**0.8)))
+                else:
+                    screen.fill((255,255,255), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))    
+            if pv == 1: 
+                cam = [cam[0]+15, cam[1], cam[2]-1]  
+            # Добавление пуль и врагов   
             if random.randrange(opp_ver) == 0 or opponents == []:
                 opponents.append([cam[0] + 1000, random.randrange(101)-50, random.randrange(101)-50, random.randrange(3)+1])
             if cadr % bull_sp == 0:
                 if pv == 1:
-                    cam = [cam[0]+20, cam[1], cam[2]-3]
-                    player_bullets.append([cam[0]-2, cam[1]+4.7, cam[2] + 2, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]-2, cam[1]-4.7, cam[2] +2, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]-2, cam[1]+4.7, cam[2]- 2, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]-2, cam[1]-4.7, cam[2] - 2, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2] -1, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2] -1, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2]- 5, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2] -5, cam_a[0], cam_a[1]])
                 else:
-                    player_bullets.append([cam[0]-2, cam[1]+4.7, cam[2] -1, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]-2, cam[1]-4.7, cam[2]-1, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]-2, cam[1]+4.7, cam[2]-5, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]-2, cam[1]-4.7, cam[2] -5, cam_a[0], cam_a[1]])                    
-                if pv == 1:
-                    cam = [cam[0]-20, cam[1], cam[2]+3]
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2] -1, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2]-1, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2]-5, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2] -5, cam_a[0], cam_a[1]])  
             if random.randrange(opp_bul_ver) == 0:
                 pos = opponents[random.randrange(len(opponents))]
                 if ps == 1:
-                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]-2, max(-1, min(1,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]))), max(-1, min(1,(pos[2]-2-cam[2])/(pos[0]-6-cam[0])))))
-                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]+2, max(-1, min(1,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]))), max(-1, min(1,(pos[2]+2-cam[2])/(pos[0]-6-cam[0])))))
-                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]-2, max(-1, min(1,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]))), max(-1, min(1,(pos[2]-2-cam[2])/(pos[0]-6-cam[0])))))
-                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, max(-1, min(1,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]))), max(-1, min(1,(pos[2]+2-cam[2])/(pos[0]-6-cam[0])))))
+                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]-2, max(-1, min(1,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]-2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]+2, max(-1, min(1,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]+2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]-2, max(-1, min(1,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]-2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, max(-1, min(1,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]+2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
                 else:
                     opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]-2, 0, 0))
                     opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]+2, 0, 0))
                     opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]-2, 0, 0))
-                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, 0, 0))                    
+                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, 0, 0)) 
+            # Перемещение
             if k == 1:
                 cam = (cam[0], max(-50, cam[1] - 1), cam[2])
             elif k == -1:
@@ -899,21 +977,21 @@ class Game_3d:
                     else:
                         pygame.draw.line(screen, (255, 0, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
             if pv == 1: 
-                i = [cam[0]+15, cam[1], cam[2]-3]       
+                i = [cam[0]+15, cam[1], cam[2]-1]       
                 for p in opp:
-                    r = angle(cam, cam_a, (i[0]-p[0][0], i[1]+p[0][1], i[2]+p[0][2]))
-                    r1 = angle(cam, cam_a, (i[0]-p[1][0], i[1]+p[1][1], i[2]+p[1][2]))
+                    r = angle(cam, cam_a, (i[0]-p[0][0], i[1]+p[0][1], i[2]-3+p[0][2]))
+                    r1 = angle(cam, cam_a, (i[0]-p[1][0], i[1]+p[1][1], i[2]-3+p[1][2]))
                     pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1) 
             
                 cam = [cam[0]+15, cam[1], cam[2]-3]
-            
+            # Поверка столкновений врагов с пулями игрока
             w = 0
             for opponent in range(len(opponents)):
-                if abs(opponents[opponent-w][0]- cam[0]) < 5 and abs(opponents[opponent-w][1]- cam[1]) < 5 and abs(opponents[opponent-w][2]- cam[2]) < 5 :
+                if (opponents[opponent-w][0]- cam[0])**2+(opponents[opponent-w][1]- cam[1])**2+(opponents[opponent-w][2]- cam[2])**2 < 100 :
                     self.res = 0
                     running = False  
-                    
                 f = 0
+                f1 = 0
                 d = 0
                 for j in range(len(player_bullets)):
                     if j % 4 == 0 and f == 0:
@@ -927,13 +1005,17 @@ class Game_3d:
                         del player_bullets[j]
                         if opponents[opponent-w][3] <= 0:
                             del opponents[opponent-w]
+                            f1 = 1
                         w += 1
                         f = 1
                 
-                if f == 0 and opponents[opponent-w][0] < cam[0] - 0:
+                if f1 == 0 and opponents[opponent-w][0] < cam[0] - 0:
                     del opponents[opponent-w]
                     w += 1                    
             w = 0
+            if pv == 1:
+                cam = [cam[0]-15, cam[1], cam[2]+1]   
+            # Перемещение и рисование пуль игрока
             for player_bullet in range(len(player_bullets)):
                 xs, ys = angle(cam, cam_a, player_bullets[player_bullet-w])
                 s = ((cam[0] -  player_bullets[player_bullet-w][0])**2 + (cam[1] -  player_bullets[player_bullet-w][1])**2 + (cam[2] -  player_bullets[player_bullet-w][2])**2)**0.5   
@@ -948,8 +1030,10 @@ class Game_3d:
                 if player_bullets[player_bullet-w][0] > cam[0] + 1100 or player_bullets[player_bullet-w][1] < -60 or player_bullets[player_bullet-w][1] > 60 or player_bullets[player_bullet-w][2]< -60 or player_bullets[player_bullet-w][2]> 60:
                     del player_bullets[player_bullet-w]
                     w += 1 
-                    
+            if pv == 1:
+                cam = [cam[0]+15, cam[1], cam[2]-1]        
             w = 0
+            # Проверка столкновения пуль врагов с игроком
             for opp_bullet in range(len(opp_bullets)):
                 if pv == 1:
                     cam = [cam[0]-15, cam[1], cam[2]+3]                    
@@ -970,61 +1054,50 @@ class Game_3d:
                 elif opp_bullets[opp_bullet-w][0] < cam[0] - 50:
                     del opp_bullets[opp_bullet-w]
                     w += 1
-                    
+            # Вывод информации
             pygame.draw.rect(screen, (0,0,0), [1100, 0, 200, 700])   
-            pygame.draw.line(screen, (255, 255, 255), (width-200, 0), (width-200, height), 1)
-            font = pygame.font.Font(None, 38)
-            text = font.render("FPS: "+str(int(clock.get_fps())), True, (100, 255, 100))
-            screen.blit(text, (width-199, 10))            
-            font = pygame.font.Font(None, 38)
-            text = font.render("Цель:", True, (100, 255, 100))
-            screen.blit(text, (width-199, 60))            
-            font = pygame.font.Font(None, 34)
-            text = font.render("Нанести урон", True, (100, 255, 100))
-            screen.blit(text, (width-199, 100))                      
-            font = pygame.font.Font(None, 34)
-            text = font.render(str(k_k), True, (100, 255, 100))
-            screen.blit(text, (width-199, 130))            
+            pygame.draw.line(screen, (255, 255, 255), (width - 200, 0), (width - 200, height), 1)
+            font = pygame.font.Font('data/grammara.ttf', 38)
+            text = font.render("FPS: " + str(int(clock.get_fps())), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 10))
+            font = pygame.font.Font('data/grammara.ttf', 38)
+            text = font.render("   Цель:", True, (255, 255, 255))
+            screen.blit(text, (width - 195, 100))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("Урон " + str(k_k), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 140))
             player_spr.draw(screen)
-            if f_d < 100000:
-                text = font.render("Пролететь "+str(f_d), True, (100, 255, 100))
-                screen.blit(text, (width-199, 160))                      
-                font = pygame.font.Font(None, 34)
-            else:
-                text = font.render("Пролететь", True, (100, 255, 100))
-                screen.blit(text, (width-199, 160))                      
-                font = pygame.font.Font(None, 34)
-                text = font.render(str(f_d), True, (100, 255, 100))
-                screen.blit(text, (width-199, 190))                      
-                font = pygame.font.Font(None, 34)
-            text = font.render("Нанесён урон", True, (100, 255, 100))
-            screen.blit(text, (width-199, 250))                      
-            font = pygame.font.Font(None, 34)
-            text = font.render(str(killed_ships), True, (100, 255, 100))
-            screen.blit(text, (width-199, 280))            
+            text = font.render("Пройти " + str(f_d), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 170))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("  Прогресс:", True, (255, 255, 255))
+            screen.blit(text, (width - 195, 290))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("Урон " + str(killed_ships), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 320))
             player_spr.draw(screen)
-            if cadr < 100000:
-                text = font.render("Пройдено "+str(cadr), True, (100, 255, 100))
-                screen.blit(text, (width-199, 310))                      
-                font = pygame.font.Font(None, 34)
+            if cadr < f_d:
+                text = font.render("Пройдено " + str(cadr), True, (255, 255, 255))
+                screen.blit(text, (width - 195, 350))
             else:
-                text = font.render("Пройдено", True, (100, 255, 100))
-                screen.blit(text, (width-199, 310))                      
-                font = pygame.font.Font(None, 34)
-                text = font.render(str(cadr), True, (100, 255, 100))
-                screen.blit(text, (width-199, 340))                      
-                font = pygame.font.Font(None, 34)
+                text = font.render("Пройдено " + str(f_d), True, (255, 255, 255))
+                screen.blit(text, (width - 195, 350))
+            text = font.render("Здоровье " + str(hp), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 470))
+            
             cadr += 1 
             if killed_ships >= k_k and cadr >= f_d:
                 self.res = 1
-                running = False            
-            pygame.draw.circle(screen, (255, 255, 255), (int(xc), int(yc)), 1)
-            pygame.draw.circle(screen, (255, 255, 255), (int(xc), int(yc)), 15, 1)
-            pygame.draw.circle(screen, (255, 255, 255), (int(xc), int(yc)), 25, 1)
-            pygame.draw.line(screen, (255, 255, 255), (int(xc), int(yc)+15), (int(xc), int(yc)+30), 1)
-            pygame.draw.line(screen, (255, 255, 255), (int(xc), int(yc)-15), (int(xc), int(yc)-30), 1)
-            pygame.draw.line(screen, (255, 255, 255), (int(xc)+15, int(yc)), (int(xc)+30, int(yc)), 1)
-            pygame.draw.line(screen, (255, 255, 255), (int(xc)-15, int(yc)), (int(xc)-30, int(yc)), 1)
+                running = False    
+            
+            if pr:
+                pygame.draw.circle(screen, (255, 255, 255), (int(xc), int(yc)), 1)
+                pygame.draw.circle(screen, (255, 255, 255), (int(xc), int(yc)), 15, 1)
+                pygame.draw.circle(screen, (255, 255, 255), (int(xc), int(yc)), 25, 1)
+                pygame.draw.line(screen, (255, 255, 255), (int(xc), int(yc)+15), (int(xc), int(yc)+30), 1)
+                pygame.draw.line(screen, (255, 255, 255), (int(xc), int(yc)-15), (int(xc), int(yc)-30), 1)
+                pygame.draw.line(screen, (255, 255, 255), (int(xc)+15, int(yc)), (int(xc)+30, int(yc)), 1)
+                pygame.draw.line(screen, (255, 255, 255), (int(xc)-15, int(yc)), (int(xc)-30, int(yc)), 1)
             pygame.display.flip()
             if esc == 1:
                 last_pressed_button = None
@@ -1039,10 +1112,13 @@ class Game_3d:
             clock.tick(fps)
     
     
-    
 lvl = 10
+pv = 0
+pr = 1
 money = 0
-hp = 10
+default_shipshp = [10, 12, 14]
+shipshp = [10, 12, 14]
+upgrade_price = [[3, 5], [9, 14], [20, 25]]
 spaceships_pl = [1, 0, 0]
 spaceships_price = [0, 10, 30]
 order = 0
@@ -1050,28 +1126,34 @@ opponents_armor = [1, 2, 3]
 bullet_force = [1, 2, 3]
 gaming = True
 gaming2 = True
+press_2d = False
+press_3d = False
 nickname = ''
 nick_screen()
-
+# Загрузка сохранённых данных
 con = sqlite3.connect("data/players.sqlite")
 cur = con.cursor()
-result = cur.execute("""SELECT sp1, sp2, sp3, money  FROM players
+result = cur.execute("""SELECT sp1, sp2, sp3, money, sp1hp, sp2hp, sp3hp  FROM players
 WHERE nick == '""" + nickname + """'""").fetchall()
 if len(result) != 0:
-    spaceships_pl = result[0][:-1]
-    money = result[0][3]
+    spaceships_pl = list(result[0][:-4])
+    if result[0][3] != None:
+        money = result[0][3]
+    shipshp = list(result[0][4:])
+hp = shipshp[0]
 con.close()
 
 lvls_base = [[200,6, 60,0],[200,6,60,1], [80,30,30,1], [80,60,6,1], [80,60,3,1]]
+# Меню игры
 while True:
     start_screen()
     gaming = True
     while gaming:
         if spaceships_screen():
-            res = chooseD_screen()
             gaming2 = True
-            if res == 3:              
+            if press_3d:
                 while gaming2:
+                    # Запуск игры
                     if lvl > 50:
                         res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
                     else:
@@ -1082,7 +1164,7 @@ while True:
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
-                        hp = 10
+                        hp = shipshp[order]
                         levelpass_screen(False, lvl // 10)
                         con = sqlite3.connect("data/players.sqlite")
                         cur = con.cursor()           
@@ -1102,19 +1184,20 @@ while True:
                     WHERE nick == '""" + nickname + """'""").fetchall()
                     con.commit()
                     con.close()                      
-            elif res == 2:      
+            elif press_2d:
                 while gaming2:
+                    # Запуск игры
                     if lvl > 50:
                         res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
                     else:
                         res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base[lvl // 10 - 1][0], lvls_base[lvl // 10 - 1][1], lvls_base[lvl // 10 - 1][2], lvls_base[lvl // 10 - 1][3]).res
-                    
+                    pygame.mouse.set_visible(True)
                     if res_game == 1:
                         money += int((lvl)**2/100)
                         levelpass_screen(True, lvl // 10)
                         lvl += 10
                     elif res_game == 0:
-                        hp = 10
+                        hp = shipshp[order]
                         levelpass_screen(False, lvl // 10)
                         con = sqlite3.connect("data/players.sqlite")
                         cur = con.cursor()
