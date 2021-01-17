@@ -332,7 +332,7 @@ def spaceships_screen():
                     order = (order - 1) % 3
                 elif right_choise.press(pygame.mouse.get_pos()):
                     order = (order + 1) % 3
-                elif 1010 < pygame.mouse.get_pos()[0] < 1140 and 495 < pygame.mouse.get_pos()[1] < 535 and spaceships_pl[order] == 1:
+                elif 1010 < pygame.mouse.get_pos()[0] < 1140 and 495 < pygame.mouse.get_pos()[1] < 535 and spaceships_pl[order] == 1 and 0 <= hp_lvl <= 1:
                     if money >= upgrade_price[order][hp_lvl]:
                         shipshp[order] += 2
                         money -= upgrade_price[order][hp_lvl]
