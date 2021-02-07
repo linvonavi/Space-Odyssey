@@ -187,7 +187,7 @@ def start_screen():
         result[i] = (str(result[i][0]),)
     if (nickname,) not in result:
         cur.execute("""INSERT INTO players(nick, sp1, sp2, sp3, lvl, sp1hp, sp2hp, sp3hp) VALUES 
-                ('""" + nickname + """', 1, 0, 0, 1, 10, 12, 14)""").fetchall()
+                ('""" + nickname + """', 1, 0, 0, 1, 10, 14, 18)""").fetchall()
         con.commit()
     con.close()
     fon = pygame.transform.scale(load_image('space.jpg'), (width, height))
@@ -495,7 +495,7 @@ class Opp_bullet(pygame.sprite.Sprite):
         self.opp_bullet_spr.add(self)
 
     def update(self, x, y):
-        self.rect = self.rect.move(x, y)
+        self.rect.x, self.rect.y = x-5, y-9
 
 
 class Opponents(pygame.sprite.Sprite):
@@ -572,19 +572,19 @@ class Game_2d:
             # Перемещение
             if last_pressed_button != None and mbp == 0:
                 event = last_pressed_button
-                if event.type == pygame.KEYDOWN and event.key == 1073741906:
+                if event.type == pygame.KEYDOWN and event.key == 119:
                     s = min(10, player[1] - 30)
                     player = (player[0], player[1] - s)
                     player_spr.update(0, -s)
-                if event.type == pygame.KEYDOWN and event.key == 1073741903:
+                if event.type == pygame.KEYDOWN and event.key == 100:
                     s = min(10, width - 232 - player[0])
                     player = (player[0] + s, player[1])
                     player_spr.update(s, 0)
-                if event.type == pygame.KEYDOWN and event.key == 1073741905:
+                if event.type == pygame.KEYDOWN and event.key == 115:
                     s = min(10, height - player[1] - 30)
                     player = (player[0], player[1] + s)
                     player_spr.update(0, s)
-                if event.type == pygame.KEYDOWN and event.key == 1073741904:
+                if event.type == pygame.KEYDOWN and event.key == 97:
                     s = min(10, player[0] - 32)
                     player = (player[0] - s, player[1])
                     player_spr.update(-s, 0)
@@ -606,35 +606,7 @@ class Game_2d:
                     opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), max(-1, min(1, -(pos[0] - player[0]) / max(player[1] - pos[1] + 20, 0.001)))])
                 else:
                     opp_bullets.append([Opp_bullet(spaceship_id, (pos[0], pos[1] + 20)), (pos[0], pos[1] + 20), 0])
-            # Вывод информации
-            pygame.draw.line(screen, (255, 255, 255), (width - 200, 0), (width - 200, height), 1)
-            font = pygame.font.Font('data/grammara.ttf', 38)
-            text = font.render("FPS: " + str(int(clock.get_fps())), True, (255, 255, 255))
-            screen.blit(text, (width - 195, 10))
-            font = pygame.font.Font('data/grammara.ttf', 38)
-            text = font.render("   Цель:", True, (255, 255, 255))
-            screen.blit(text, (width - 195, 100))
-            font = pygame.font.Font('data/grammara.ttf', 34)
-            text = font.render("Урон " + str(k_k), True, (255, 255, 255))
-            screen.blit(text, (width - 195, 140))
-            player_spr.draw(screen)
-            text = font.render("Пройти " + str(f_d), True, (255, 255, 255))
-            screen.blit(text, (width - 195, 170))
-            font = pygame.font.Font('data/grammara.ttf', 34)
-            text = font.render("  Прогресс:", True, (255, 255, 255))
-            screen.blit(text, (width - 195, 290))
-            font = pygame.font.Font('data/grammara.ttf', 34)
-            text = font.render("Урон " + str(killed_ships), True, (255, 255, 255))
-            screen.blit(text, (width - 195, 320))
-            player_spr.draw(screen)
-            if cadr < f_d:
-                text = font.render("Пройдено " + str(cadr), True, (255, 255, 255))
-                screen.blit(text, (width - 195, 350))
-            else:
-                text = font.render("Пройдено " + str(f_d), True, (255, 255, 255))
-                screen.blit(text, (width - 195, 350))
-            text = font.render("Здоровье " + str(hp), True, (255, 255, 255))
-            screen.blit(text, (width - 195, 470))
+            
             # Поверка столкновений врагов с пулями игрока
             w = 0
             for opponent in range(len(opponents)):
@@ -674,7 +646,7 @@ class Game_2d:
             # Проверка столкновения пуль врагов с игроком
             w = 0
             for opp_bullet in range(len(opp_bullets)):
-                opp_bullets[opp_bullet - w][0].opp_bullet_spr.update(opp_bullets[opp_bullet - w][2]*5, 5)
+                opp_bullets[opp_bullet - w][0].opp_bullet_spr.update(opp_bullets[opp_bullet - w][1][0]+opp_bullets[opp_bullet - w][2]*5, opp_bullets[opp_bullet - w][1][1] + 5)
                 opp_bullets[opp_bullet - w][0].opp_bullet_spr.draw(screen)
                 opp_bullets[opp_bullet - w][1] = (opp_bullets[opp_bullet - w][1][0]+opp_bullets[opp_bullet - w][2]*5, opp_bullets[opp_bullet - w][1][1] + 5, opp_bullets[opp_bullet - w][2])
                 if ((opp_bullets[opp_bullet - w][1][0] - player[0]) ** 2 + (
@@ -689,8 +661,39 @@ class Game_2d:
                 elif opp_bullets[opp_bullet - w][1][1] < -50:
                     del opp_bullets[opp_bullet - w]
                     w += 1
-
-            cadr += 1
+            
+            # Вывод информации
+            pygame.draw.rect(screen, (0, 0, 0), (width - 200, 0, 200, height))
+            pygame.draw.line(screen, (255, 255, 255), (width - 200, 0), (width - 200, height), 1)
+            font = pygame.font.Font('data/grammara.ttf', 38)
+            text = font.render("FPS: " + str(int(clock.get_fps())), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 10))
+            font = pygame.font.Font('data/grammara.ttf', 38)
+            text = font.render("   Цель:", True, (255, 255, 255))
+            screen.blit(text, (width - 195, 100))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("Урон " + str(k_k), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 140))
+            player_spr.draw(screen)
+            text = font.render("Пройти " + str(f_d), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 170))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("  Прогресс:", True, (255, 255, 255))
+            screen.blit(text, (width - 195, 290))
+            font = pygame.font.Font('data/grammara.ttf', 34)
+            text = font.render("Урон " + str(killed_ships), True, (255, 255, 255))
+            screen.blit(text, (width - 195, 320))
+            player_spr.draw(screen)
+            if cadr < f_d:
+                text = font.render("Пройдено " + str(cadr), True, (255, 255, 255))
+                screen.blit(text, (width - 195, 350))
+            else:
+                text = font.render("Пройдено " + str(f_d), True, (255, 255, 255))
+                screen.blit(text, (width - 195, 350))
+            text = font.render("Здоровье " + str(hp), True, (            255, 255, 255))
+            screen.blit(text, (width - 195, 470))
+            
+            cadr += 1  
             if killed_ships >= k_k and cadr >= f_d:
                 self.res = 1
                 pygame.mouse.set_visible(True)
@@ -699,45 +702,25 @@ class Game_2d:
 
             clock.tick(fps)
 
-# Нахождение угла между вектрами
-def angle_trunc(a):
-    while a < 0.0:
-        a += math.pi * 2
-    return a
-
-
-def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
-    deltaY = y_landmark - y_orig
-    deltaX = x_landmark - x_orig
-    return angle_trunc(math.atan2(deltaY, deltaX))
-
 
 def angle(cam, cam_a, i):
-    gs = ((cam[0] - i[0]) ** 2 + (cam[1] - i[1]) ** 2) ** 0.5  # расстояние по горизонтальной плоскости
-    if (cam[0], cam[1]) != (i[0], i[1]):
-        xs = cam_a[0] - (360 - math.degrees(getAngleBetweenPoints(cam[0], cam[1], i[0], i[1])))
-        if xs > 0:
-            xs1 = -(360 - xs)
-        else:
-            xs1 = 360 + xs
-            if abs(xs1) < abs(xs):
-                xs = xs1
-    else:
-        xs = 0
-    ys = math.degrees(getAngleBetweenPoints(0, cam[2], gs, i[2])) - cam_a[1]
-    if ys > 0:
-        ys1 = -(360 - ys)
-    else:
-        ys1 = 360 + ys
-    if abs(ys1) < abs(ys):
-        ys = ys1
-    return (xs, ys)
-
+    if i[0] < cam[0]+1:
+        pass#raise ValueError
+    vax = 90
+    vc = 550 / vax * 2    
+    i = [i[0]-cam[0], i[1]-cam[1], i[2]-cam[2]]
+    i1 = i.copy()
+    i1[0] = i[0] * math.cos(math.radians(cam_a[0])) - i[1] * math.sin(math.radians(cam_a[0]))
+    i1[1] = i[0] * math.sin(math.radians(cam_a[0])) + i[1] * math.cos(math.radians(cam_a[0]))
+    i = i1.copy()
+    i1[0] = i[0] * math.cos(math.radians(-cam_a[1])) - i[2] * math.sin(math.radians(-cam_a[1]))
+    i1[2] = i[0] * math.sin(math.radians(-cam_a[1])) + i[2] * math.cos(math.radians(-cam_a[1]))
+    return i1[1]/(i1[0]+0.001)/vc*550, (i1[2])/(i1[0]+0.001)/vc*550
 
 # Игра 3D
 class Game_3d:
-    def __init__(self, width, height, fps, spaceship_id, opp_id, k_k, f_d, opp_ver, bull_sp, opp_bul_ver, ps):
-        global hp, pv, pr
+    def __init__(self, width, height, fps, spaceship_id, opp_id, k_k, f_d, opp_ver, bull_sp, opp_bul_ver, ps, ml):
+        global hp, pv, pr, eff
         opponents = []
         player_spr = pygame.sprite.Group() 
         # Модель корабля противника
@@ -836,6 +819,9 @@ class Game_3d:
         killed_ships = 0
         xc = 550
         yc = 350
+        eff = 1
+        sdv = [0, 0]
+        ppo = 0
         running = True
         k = 0
         clock = pygame.time.Clock()
@@ -852,6 +838,8 @@ class Game_3d:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == 114:
                         pv = 1 - pv
+                        sdv = [0, 0]
+                        ppo = 0
                     elif event.key == pygame.K_ESCAPE:
                         esc = 1
                     elif event.key == pygame.K_LEFT:
@@ -872,15 +860,30 @@ class Game_3d:
                         k = -3
                     elif event.key == 101:
                         pr = 1 - pr
+                    elif event.key == 113:
+                        eff = 1 - eff
                 elif event.type == pygame.KEYUP:
                     k = 0
-                elif event.type == pygame.MOUSEBUTTONDOWN:   
-                    mbd = 1- mbd
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:   
+                        mbd = 1- mbd
+                    elif event.button == 3:
+                        vax = 115-vax
+                        vc = xc / vax * 2                        
+                
                 elif mbd == 1 and event.type == pygame.MOUSEMOTION:
-                    cam_a = (min(45, max(-45, cam_a[0] + event.rel[0]*vcm)), min(45, max(-45, cam_a[1] - event.rel[1]*vcm)))
+                    cam_a = (min(45, max(-45, cam_a[0] + event.rel[0]*vcm/90*vax)), min(45, max(-45, cam_a[1] - event.rel[1]*vcm/90*vax)))
         
             screen.fill(pygame.Color('black'))
-            cam = (cam[0]+1, cam[1], cam[2])
+            if ppo*0.1 < 3 or (not eff):
+                if cam[0] < cadr-5:
+                    cam = (cam[0]+10, cam[1], cam[2])
+                else:    
+                    cam = (cam[0]+1, cam[1], cam[2])
+                
+            else:
+                cam = (cam[0]-ppo * 0.1, cam[1], cam[2])
+                ppo *= 0.9
             # Добавление звёзд
             zvp = random.randrange(40)
             if zvp == 0:
@@ -891,17 +894,17 @@ class Game_3d:
                 zv.append([cam[0]+2000, random.randrange(201)+100, random.randrange(601)-300])
             elif zvp == 3:
                 zv.append([cam[0]+2000, random.randrange(201)-300, random.randrange(601)-300])
-            if len(zv) > 0 and zv[0][0]<cam[0]:
+            if len(zv) > 0 and zv[0][0]<cam[0]+5:
                 del zv[0]
             if pv == 1: 
                 cam = [cam[0]-15, cam[1], cam[2]+1]  
             for i in zv:
                 xs, ys = angle(cam, cam_a, i)
                 s = ((cam[0] -  i[0])**2 + (cam[1] -  i[1])**2 + (cam[2] -  i[2])**2)**0.5   
-                if s < 1250:
-                    pygame.draw.circle(screen, (255, 255, 255), (int(xc - xs * vc), int(yc - ys * vc)), int(max(1, 300 / s**0.8)))
+                if s < 1250*90/vax:
+                    pygame.draw.circle(screen, (255, 255, 255), (int(xc - xs * vc), int(yc - ys * vc)), int(max(1, 300 / s**0.8*90/vax)))
                 else:
-                    screen.fill((255,255,255), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))    
+                    screen.fill((255,255,255), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))  
             if pv == 1: 
                 cam = [cam[0]+15, cam[1], cam[2]-1]  
             # Добавление пуль и врагов   
@@ -909,37 +912,44 @@ class Game_3d:
                 opponents.append([cam[0] + 1000, random.randrange(101)-50, random.randrange(101)-50, random.randrange(3)+1])
             if cadr % bull_sp == 0:
                 if pv == 1:
-                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2] -1, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2] -1, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2]- 5, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2] -5, cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7-sdv[0], cam[2] -0-sdv[1], cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7-sdv[0], cam[2] -0-sdv[1], cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7-sdv[0], cam[2]- 4-sdv[1], cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7-sdv[0], cam[2] -4-sdv[1], cam_a[0], cam_a[1]])
                 else:
-                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2] -1, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2]-1, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]+1.5, cam[1]+4.7, cam[2]-5, cam_a[0], cam_a[1]])
-                    player_bullets.append([cam[0]+1.5, cam[1]-4.7, cam[2] -5, cam_a[0], cam_a[1]])  
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7-sdv[0], cam[2] -0-sdv[1], cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7-sdv[0], cam[2]-0-sdv[1], cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]+4.7-sdv[0], cam[2]-4-sdv[1], cam_a[0], cam_a[1]])
+                    player_bullets.append([cam[0]+1.5, cam[1]-4.7-sdv[0], cam[2] -4-sdv[1], cam_a[0], cam_a[1]])  
             if random.randrange(opp_bul_ver) == 0:
                 pos = opponents[random.randrange(len(opponents))]
                 if ps == 1:
-                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]-2, max(-1, min(1,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]-2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
-                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]+2, max(-1, min(1,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]+2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
-                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]-2, max(-1, min(1,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]-2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
-                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, max(-1, min(1,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-1, min(1,(pos[2]+2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]-2, max(-ml, min(ml,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-ml, min(ml,(pos[2]-2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]+2, max(-ml, min(ml,(pos[1]-4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-ml, min(ml,(pos[2]+2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]-2, max(-ml, min(ml,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-ml, min(ml,(pos[2]-2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
+                    opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, max(-ml, min(ml,(pos[1]+4.75-cam[1])/(pos[0]-6-cam[0]+0.001))), max(-ml, min(ml,(pos[2]+2-cam[2])/(pos[0]-6-cam[0]+0.001)))))
                 else:
                     opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]-2, 0, 0))
                     opp_bullets.append((pos[0]-6, pos[1]-4.75, pos[2]+2, 0, 0))
                     opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]-2, 0, 0))
                     opp_bullets.append((pos[0]-6, pos[1]+4.75, pos[2]+2, 0, 0)) 
             # Перемещение
+            coeff = 1.1
             if k == 1:
                 cam = (cam[0], max(-50, cam[1] - 1), cam[2])
+                sdv = [max(-3, min(3, sdv[0]-0.1)), sdv[1]/coeff]
             elif k == -1:
                 cam = (cam[0], min(50, cam[1] + 1), cam[2])
+                sdv = [max(-3, min(3, sdv[0]+0.1)), sdv[1]/coeff]
             elif k == 3:
                 cam = (cam[0], cam[1], min(50, cam[2]+1))
+                sdv = [sdv[0]/coeff, max(-2, min(2, sdv[1]+0.1))]
             elif k == -3:
                 cam = (cam[0], cam[1], max(-50, cam[2]-1))
-            elif k == 4:
+                sdv = [sdv[0]/coeff, max(-2, min(2, sdv[1]-0.1))]
+            else:
+                sdv = [sdv[0]/coeff, sdv[1]/coeff]
+            if k == 4:
                 cam_a = (max(-45, cam_a[0] - 1), cam_a[1])
             elif k == -4:
                 cam_a = (min(45, cam_a[0] + 1), cam_a[1])
@@ -949,69 +959,61 @@ class Game_3d:
                 cam_a = (cam_a[0], min(45, cam_a[1] + 1))
             if pv == 1:
                 cam = [cam[0]-15, cam[1], cam[2]+3]            
-            for wall in [[[cam[0] + 1000, 60, 60], [cam[0] + 1000, -60, 60], [cam[0],-100, 200], [cam[0],100, 200]],
-                        [[cam[0] + 1000, 60, 60], [cam[0] + 1000, 60, -60], [cam[0],100, -200], [cam[0],100, 200]],
-                        [[cam[0] + 1000, -60, -60], [cam[0] + 1000, 60, -60], [cam[0],100, -200], [cam[0],-100, -200]],
-                        [[cam[0] + 1000, -60, -60], [cam[0] + 1000, -60, 60], [cam[0],-100, 200], [cam[0],-100, -200]]]:
-                poly = []
-                for i in wall:
-                    if len(i) == 3:
-                        xs, ys = angle(cam, cam_a, i)
-                        poly.append((int(xc - xs * vc), int(yc - ys * vc)))                        
-                    else:
-                        poly.append(i)
-                
-                pygame.draw.line(screen, (155, 155, 155), poly[1], poly[0], 1)
-                pygame.draw.line(screen, (155, 155, 155), poly[1], poly[2], 1)
-                pygame.draw.line(screen, (155, 155, 155), poly[0], poly[3], 1)
-        
+           
+     
             for i in opponents:
                 s = ((cam[0] - i[0])**2 + (cam[1] - i[1])**2 + (cam[2] - i[2])**2)**0.5                
                 for p in opp:
                     r = angle(cam, cam_a, (i[0]+p[0][0], i[1]+p[0][1], i[2]+p[0][2]))
                     r1 = angle(cam, cam_a, (i[0]+p[1][0], i[1]+p[1][1], i[2]+p[1][2]))
-                    if i[3] == 1:
+                    if int(i[3]+0.9) == 1:
                         pygame.draw.line(screen, (0, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
-                    elif i[3] == 2:
+                    elif int(i[3]+0.9) == 2:
                         pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
                     else:
                         pygame.draw.line(screen, (255, 0, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
             if pv == 1: 
-                i = [cam[0]+15, cam[1], cam[2]-1]       
+                i = [cam[0]+15, cam[1], cam[2]+1]       
                 for p in opp:
-                    r = angle(cam, cam_a, (i[0]-p[0][0], i[1]+p[0][1], i[2]-3+p[0][2]))
-                    r1 = angle(cam, cam_a, (i[0]-p[1][0], i[1]+p[1][1], i[2]-3+p[1][2]))
+                    r = angle((cam[0], cam[1]+sdv[0], cam[2]+sdv[1]+1), cam_a, (i[0]-p[0][0], i[1]+p[0][1], i[2]-3+p[0][2]))
+                    r1 = angle((cam[0], cam[1]+sdv[0], cam[2]+sdv[1]+1), cam_a, (i[0]-p[1][0], i[1]+p[1][1], i[2]-3+p[1][2]))
                     pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1) 
             
                 cam = [cam[0]+15, cam[1], cam[2]-3]
             # Поверка столкновений врагов с пулями игрока
             w = 0
             for opponent in range(len(opponents)):
+                
                 if (opponents[opponent-w][0]- cam[0])**2+(opponents[opponent-w][1]- cam[1])**2+(opponents[opponent-w][2]- cam[2])**2 < 100 :
                     self.res = 0
                     running = False  
                 f = 0
                 f1 = 0
+                w1 = 0
                 d = 0
                 for j in range(len(player_bullets)):
-                    if j % 4 == 0 and f == 0:
-                        if ((player_bullets[j][0] - opponents[opponent-w][0])**2 + (player_bullets[j][1] - opponents[opponent-w][1])**2+(player_bullets[j][2] - opponents[opponent-w][2])**2)**0.5 < 15:
-                            d = 1
-                        else:
-                            d = 0
-                    if d == 1 and f == 0 and ((player_bullets[j][0] - opponents[opponent-w][0])**2 + (player_bullets[j][1] - opponents[opponent-w][1])**2+(player_bullets[j][2] - opponents[opponent-w][2])**2)**0.5 < 5:
-                        killed_ships += min(spaceship_id, opponents[opponent-w][3])
-                        opponents[opponent-w][3] -= min(spaceship_id, opponents[opponent-w][3])
-                        del player_bullets[j]
-                        if opponents[opponent-w][3] <= 0:
-                            del opponents[opponent-w]
-                            f1 = 1
-                        w += 1
-                        f = 1
+                    try:
+                        if j % 4 == 0:
+                            if ((player_bullets[j-w1][0] - opponents[opponent-w][0])**2 + (player_bullets[j-w1][1] - opponents[opponent-w][1])**2+(player_bullets[j-w1][2] - opponents[opponent-w][2])**2)**0.5 < 15:
+                                d = 1
+                            else:
+                                d = 0
+                        if d == 1 and ((player_bullets[j-w1][0] - opponents[opponent-w][0])**2 + (player_bullets[j-w1][1] - opponents[opponent-w][1])**2+(player_bullets[j-w1][2] - opponents[opponent-w][2])**2)**0.5 < 10:
+                            killed_ships += min(spaceship_id, opponents[opponent-w][3])/4
+                            opponents[opponent-w][3] -= min(spaceship_id, opponents[opponent-w][3])/4
+                            del player_bullets[j-w1]
+                            w1 += 1
+                            if opponents[opponent-w][3] <= 0.2:
+                                del opponents[opponent-w]
+                                f1 = 1
+                                w += 1
+                            f = 1
+                    except Exception:
+                        pass
                 
-                if f1 == 0 and opponents[opponent-w][0] < cam[0] - 0:
+                if f1 == 0 and opponents[opponent-w][0] < cam[0]+5:
                     del opponents[opponent-w]
-                    w += 1                    
+                    w += 1 
             w = 0
             if pv == 1:
                 cam = [cam[0]-15, cam[1], cam[2]+1]   
@@ -1019,8 +1021,11 @@ class Game_3d:
             for player_bullet in range(len(player_bullets)):
                 xs, ys = angle(cam, cam_a, player_bullets[player_bullet-w])
                 s = ((cam[0] -  player_bullets[player_bullet-w][0])**2 + (cam[1] -  player_bullets[player_bullet-w][1])**2 + (cam[2] -  player_bullets[player_bullet-w][2])**2)**0.5   
-                if s < 300:
-                    pygame.draw.circle(screen, (0, 255, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(10 / s**0.4))
+                if s < 300*90/vax:
+                    if vax == 90:
+                        pygame.draw.circle(screen, (0, 255, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(10 / s**0.4))
+                    else:
+                        pygame.draw.circle(screen, (0, 255, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(10 / s**0.4*2))                        
                 else:
                     screen.fill((0,255,0), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))                    
                 player_bullets[player_bullet-w] = (player_bullets[player_bullet-w][0]+5*math.cos(math.radians(player_bullets[player_bullet-w][3]*0.82)), 
@@ -1038,20 +1043,27 @@ class Game_3d:
                 if pv == 1:
                     cam = [cam[0]-15, cam[1], cam[2]+3]                    
                 xs, ys = angle(cam, cam_a, opp_bullets[opp_bullet-w][:3])
-                s = ((cam[0] - opp_bullets[opp_bullet-w][0])**2 + (cam[1] - opp_bullets[opp_bullet-w][1])**2 + (cam[2] - opp_bullets[opp_bullet-w][2])**2)**0.5   
-                pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(50/max(s**0.5, 0.01)))       
+                s = ((cam[0] - opp_bullets[opp_bullet-w][0])**2 + (cam[1] - opp_bullets[opp_bullet-w][1])**2 + (cam[2] - opp_bullets[opp_bullet-w][2])**2)**0.5 
+                if vax == 90:
+                    pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(50/max(s**0.5, 0.01)))  
+                else:
+                    pygame.draw.circle(screen, (255, 0, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(50/max(s**0.5/2, 0.01)))  
                 if pv == 1:
                     cam = [cam[0]+15, cam[1], cam[2]-3]    
-                opp_bullets[opp_bullet-w] = (opp_bullets[opp_bullet-w][0]-1, opp_bullets[opp_bullet-w][1]-opp_bullets[opp_bullet-w][3]*2, opp_bullets[opp_bullet-w][2]-opp_bullets[opp_bullet-w][4]*2, opp_bullets[opp_bullet-w][3], opp_bullets[opp_bullet-w][4]) 
+                if ps == 1:
+                    opp_bullets[opp_bullet-w] = (opp_bullets[opp_bullet-w][0]-1, opp_bullets[opp_bullet-w][1]-opp_bullets[opp_bullet-w][3]*2, opp_bullets[opp_bullet-w][2]-opp_bullets[opp_bullet-w][4]*2, max(-ml, min(ml,(opp_bullets[opp_bullet-w][1]-cam[1])/(opp_bullets[opp_bullet-w][0]-6-cam[0]+0.001))), max(-ml, min(ml,(opp_bullets[opp_bullet-w][2]-2-cam[2])/(opp_bullets[opp_bullet-w][0]-6-cam[0]+0.001)))) 
+                else:
+                    opp_bullets[opp_bullet-w] = (opp_bullets[opp_bullet-w][0]-1, opp_bullets[opp_bullet-w][1]-opp_bullets[opp_bullet-w][3]*2, opp_bullets[opp_bullet-w][2]-opp_bullets[opp_bullet-w][4]*2, opp_bullets[opp_bullet-w][3], opp_bullets[opp_bullet-w][4]) 
                 if ((opp_bullets[opp_bullet - w][0] - cam[0])**2 + (opp_bullets[opp_bullet - w][1] - cam[1])**2 + (opp_bullets[opp_bullet - w][2] - cam[2])**2)**0.5 < 5:
-                    hp -= 1
+                    hp -= 0.25
+                    ppo = 80
                     del opp_bullets[opp_bullet-w]
                     w += 1                    
-                    if hp <= 0:
+                    if hp <= 0.2:
                         self.res = 0
                         running = False
                     
-                elif opp_bullets[opp_bullet-w][0] < cam[0] - 50:
+                elif opp_bullets[opp_bullet-w][0] < cam[0] + 1:
                     del opp_bullets[opp_bullet-w]
                     w += 1
             # Вывод информации
@@ -1073,7 +1085,7 @@ class Game_3d:
             text = font.render("  Прогресс:", True, (255, 255, 255))
             screen.blit(text, (width - 195, 290))
             font = pygame.font.Font('data/grammara.ttf', 34)
-            text = font.render("Урон " + str(killed_ships), True, (255, 255, 255))
+            text = font.render("Урон " + str(int(killed_ships)), True, (255, 255, 255))
             screen.blit(text, (width - 195, 320))
             player_spr.draw(screen)
             if cadr < f_d:
@@ -1082,7 +1094,7 @@ class Game_3d:
             else:
                 text = font.render("Пройдено " + str(f_d), True, (255, 255, 255))
                 screen.blit(text, (width - 195, 350))
-            text = font.render("Здоровье " + str(hp), True, (255, 255, 255))
+            text = font.render("Здоровье " + str(int(hp)), True, (255, 255, 255))
             screen.blit(text, (width - 195, 470))
             
             cadr += 1 
@@ -1106,7 +1118,6 @@ class Game_3d:
                     self.res = -1
                     fps = 0
                     running = False
-                else:
                     break
                 esc = 0
             clock.tick(fps)
@@ -1115,9 +1126,10 @@ class Game_3d:
 lvl = 10
 pv = 0
 pr = 1
+eff = 1
 money = 0
-default_shipshp = [10, 12, 14]
-shipshp = [10, 12, 14]
+default_shipshp = [10, 14, 18]
+shipshp = [10, 14, 18]
 upgrade_price = [[3, 5], [9, 14], [20, 25]]
 spaceships_pl = [1, 0, 0]
 spaceships_price = [0, 10, 30]
@@ -1143,7 +1155,8 @@ if len(result) != 0:
 hp = shipshp[0]
 con.close()
 
-lvls_base = [[200,6, 60,0],[200,6,60,1], [80,30,30,1], [80,60,6,1], [80,60,3,1]]
+lvls_base_3 = [[200,6, 60,0, 0],[200,6,60,1, 0.2], [80,30,30,1, 0.3], [80,60,30,1, 0.5], [80,60,30,1,0.7], [80,60,30,1,0.8]]
+lvls_base_2 = [[200,6, 60,0],[200,6,60,1], [80,30,30,1], [80,60,6,1], [80,60,4,1]]
 # Меню игры
 while True:
     start_screen()
@@ -1154,10 +1167,10 @@ while True:
             if press_3d:
                 while gaming2:
                     # Запуск игры
-                    if lvl > 50:
-                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
+                    if lvl > 60:
+                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base_3[4][0]-(lvl//10-6)), min(100, lvls_base_3[4][1]+(lvl//10-6)*5), max(20, lvls_base_3[4][2]-(lvl//10-6)), lvls_base_3[4][3], lvls_base_3[4][4]+1*(lvl//10-6)).res
                     else:
-                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base[lvl // 10 - 1][0], lvls_base[lvl // 10 - 1][1], lvls_base[lvl // 10 - 1][2], lvls_base[lvl // 10 - 1][3]).res
+                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base_3[lvl // 10 - 1][0], lvls_base_3[lvl // 10 - 1][1], lvls_base_3[lvl // 10 - 1][2], lvls_base_3[lvl // 10 - 1][3], lvls_base_3[lvl // 10 - 1][4]).res
                                         
                     if res_game == 1:
                         money += int((lvl)**2 / 100)
@@ -1188,9 +1201,9 @@ while True:
                 while gaming2:
                     # Запуск игры
                     if lvl > 50:
-                        res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base[4][0]-(lvl//10-5)), min(100, lvls_base[4][1]+(lvl//10-5)*5), max(1, lvls_base[4][2]-(lvl//10-5)), lvls_base[4][3]).res
+                        res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base_2[4][0]-(lvl//10-5)), min(100, lvls_base_2[4][1]+(lvl//10-5)*5), max(1, lvls_base_2[4][2]-(lvl//10-5)), lvls_base_2[4][3]).res
                     else:
-                        res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base[lvl // 10 - 1][0], lvls_base[lvl // 10 - 1][1], lvls_base[lvl // 10 - 1][2], lvls_base[lvl // 10 - 1][3]).res
+                        res_game = Game_2d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base_2[lvl // 10 - 1][0], lvls_base_2[lvl // 10 - 1][1], lvls_base_2[lvl // 10 - 1][2], lvls_base_2[lvl // 10 - 1][3]).res
                     pygame.mouse.set_visible(True)
                     if res_game == 1:
                         money += int((lvl)**2/100)
