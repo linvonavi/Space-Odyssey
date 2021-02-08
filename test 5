@@ -1,0 +1,145 @@
+import os
+import sys
+
+import pygame
+import requests
+
+
+class InputText:
+    def __init__(self, color, x, y, w, h, text_size=40, text=''):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = color
+        self.text = text
+        self.size = text_size
+        self.txt_surface = pygame.font.Font(None, self.size).render(self.text, True, self.color)
+        self.active = False
+
+    def text_event(self, event):
+        global search
+        pygame.draw.rect(screen, (0, 0, 50), self.rect, 0)
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+        screen.blit(self.txt_surface, (self.rect.x+2, self.rect.y+2))
+        if event.type == 1025:
+            if self.rect.collidepoint(event.pos):
+                self.active = not self.active
+                if self.text[-1:] != '_':
+                    self.text += '_'
+            else:
+                self.active = False
+                if self.text != '':
+                    self.text = self.text[:-1]
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    if len(self.text) != 0 and self.text != '_':
+                        search = self.text[:-1]
+                        self.text = ''
+                        return 0
+                elif event.key == pygame.K_BACKSPACE:
+                    if len(self.text) > 0:
+                        self.text = self.text[:-2] + '_'
+                else:
+                    if len(self.text) < 20:
+                        self.text = self.text[:-1] + event.unicode + '_'
+        self.txt_surface = pygame.font.SysFont(None, self.size).render(self.text, True, self.color)
+
+    def draw(self):
+        pygame.draw.rect(screen, (0, 0, 50), self.rect, 0)
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+        screen.blit(self.txt_surface, (self.rect.x+2, self.rect.y+2))
+
+def resp(lon, lat, delta, type):
+    api_server = "http://static-maps.yandex.ru/1.x/"
+
+
+    params = {
+        "ll": ",".join([lon, lat]),
+        "spn": ",".join([delta, delta]),
+        "l": type
+    }
+    response = requests.get(api_server, params=params)
+    if not response:
+        print("Ошибка выполнения запроса:")
+        print(map_request)
+        print("Http статус:", response.status_code, "(", response.reason, ")")
+        sys.exit(1)
+
+    # Запишем полученное изображение в файл.
+    map_file = "map.png"
+    with open(map_file, "wb") as file:
+        file.write(response.content)
+    return map_file
+
+
+lon = "135"
+lat = "-0"
+delta = "50"
+type = 'sat'
+
+pygame.init()
+pygame.display.set_caption('Maps-API')
+size = width, height = 700, 500
+screen = pygame.display.set_mode(size)
+
+map_file = resp(lon, lat, delta, type)
+running = True
+fps = 30
+clock = pygame.time.Clock()
+search = ''
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if 610<event.pos[0]<690:
+                if 300<event.pos[1]<330:
+                    type = 'map'
+                    map_file = resp(lon, lat, delta, type)
+                if 350<event.pos[1]<380:
+                    type = 'sat'
+                    map_file = resp(lon, lat, delta, type)
+                if 400<event.pos[1]<430:
+                    type = 'sat,skl'
+                    map_file = resp(lon, lat, delta, type)
+            if 10<event.pos[0]<510 and 10<event.pos[1]<40:
+                if search == '':
+                    search = InputText((255, 255, 255), 10, 10, 480, 30)
+
+            if 520<event.pos[0]<600 and 10<event.pos[1]<30:
+                print(search)
+                search = ''
+
+        try:
+            search.text_event(event)
+        except Exception:
+            pass
+
+
+    screen.fill((0,0, 150))
+    screen.blit(pygame.image.load(map_file), (0, 50))
+    pygame.draw.rect(screen, (255, 255, 255), (610, 350, 80, 30))
+    pygame.draw.rect(screen, (255, 255, 255), (610, 400, 80, 30))
+    pygame.draw.rect(screen, (255, 255, 255), (610, 450, 80, 30))
+    pygame.draw.rect(screen, (255, 255, 255), (520, 10, 80, 30))
+    try:
+        search.draw()
+    except Exception:
+        pygame.draw.rect(screen, (255, 255, 255), (10, 10, 480, 30))
+
+    font = pygame.font.Font(None, 35)
+    text = font.render('схема', 1, (255, 0, 0))
+    screen.blit(text, (615, 354))
+    font = pygame.font.Font(None, 27)
+    text = font.render('спутник', 1, (255, 0, 0))
+    screen.blit(text, (615, 404))
+    font = pygame.font.Font(None, 30)
+    text = font.render('гибрид', 1, (255, 0, 0))
+    screen.blit(text, (615, 454))
+    font = pygame.font.Font(None, 35)
+    text = font.render('Поиск', 1, (0, 0, 0))
+    screen.blit(text, (522, 13))
+    pygame.display.flip()
+    clock.tick(fps)
+pygame.quit()
+
+os.remove(map_file)
