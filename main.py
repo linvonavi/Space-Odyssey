@@ -702,20 +702,32 @@ class Game_2d:
 
             clock.tick(fps)
 
+def angle_trunc(a):
+    while a < 0.0:
+        a += math.pi * 2
+    return a
+
+
+def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
+    deltaY = y_landmark - y_orig
+    deltaX = x_landmark - x_orig
+    return angle_trunc(math.atan2(deltaY, deltaX))
 
 def angle(cam, cam_a, i):
-    if i[0] < cam[0]+1:
-        pass#raise ValueError
-    vax = 90
-    vc = 550 / vax * 2    
+    if 45 <(math.degrees(getAngleBetweenPoints(cam[0], cam[1], i[0], i[1]))+cam_a[0]+360)%360 < 315:
+        return 1000, 1000
     i = [i[0]-cam[0], i[1]-cam[1], i[2]-cam[2]]
+    c1 = math.cos(math.radians(cam_a[0]))
+    s1 = math.sin(math.radians(cam_a[0]))
+    c2 = math.cos(math.radians(-cam_a[1]))
+    s2 = math.sin(math.radians(-cam_a[1]))
     i1 = i.copy()
-    i1[0] = i[0] * math.cos(math.radians(cam_a[0])) - i[1] * math.sin(math.radians(cam_a[0]))
-    i1[1] = i[0] * math.sin(math.radians(cam_a[0])) + i[1] * math.cos(math.radians(cam_a[0]))
+    i1[0] = i[0] * c1 - i[1] * s1
+    i1[1] = i[0] * s1 + i[1] * c1
     i = i1.copy()
-    i1[0] = i[0] * math.cos(math.radians(-cam_a[1])) - i[2] * math.sin(math.radians(-cam_a[1]))
-    i1[2] = i[0] * math.sin(math.radians(-cam_a[1])) + i[2] * math.cos(math.radians(-cam_a[1]))
-    return i1[1]/(i1[0]+0.001)/vc*550, (i1[2])/(i1[0]+0.001)/vc*550
+    i1[0] = i[0] * c2 - i[2] * s2
+    i1[2] = i[0] * s2 + i[2] * c2
+    return i1[1]/(i1[0]+0.001)/12.222222222222221*550, (i1[2])/(i1[0]+0.001)/12.222222222222221*550  
 
 # Игра 3D
 class Game_3d:
@@ -966,12 +978,13 @@ class Game_3d:
                 for p in opp:
                     r = angle(cam, cam_a, (i[0]+p[0][0], i[1]+p[0][1], i[2]+p[0][2]))
                     r1 = angle(cam, cam_a, (i[0]+p[1][0], i[1]+p[1][1], i[2]+p[1][2]))
-                    if int(i[3]+0.9) == 1:
-                        pygame.draw.line(screen, (0, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
-                    elif int(i[3]+0.9) == 2:
-                        pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
-                    else:
-                        pygame.draw.line(screen, (255, 0, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
+                    if not(r[0] == 1000 or r1[0] == 1000):
+                        if int(i[3]+0.9) == 1:
+                            pygame.draw.line(screen, (0, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
+                        elif int(i[3]+0.9) == 2:
+                            pygame.draw.line(screen, (255, 255, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
+                        else:
+                            pygame.draw.line(screen, (255, 0, 0), (int(xc - r[0] * vc), int(yc - r[1] * vc)), (int(xc - r1[0] * vc), int(yc - r1[1] * vc)), 1)
             if pv == 1: 
                 i = [cam[0]+15, cam[1], cam[2]+1]       
                 for p in opp:
@@ -1005,7 +1018,7 @@ class Game_3d:
                             w1 += 1
                             if opponents[opponent-w][3] <= 0.2:
                                 del opponents[opponent-w]
-                                f1 = 1
+                                f1 = 1     
                                 w += 1
                             f = 1
                     except Exception:
@@ -1028,9 +1041,9 @@ class Game_3d:
                         pygame.draw.circle(screen, (0, 255, 0), (int(xc - xs * vc), int(yc - ys * vc)), int(10 / s**0.4*2))                        
                 else:
                     screen.fill((0,255,0), (int(xc - xs * vc), int(yc - ys * vc), 1, 1))                    
-                player_bullets[player_bullet-w] = (player_bullets[player_bullet-w][0]+5*math.cos(math.radians(player_bullets[player_bullet-w][3]*0.82)), 
-                                                   player_bullets[player_bullet-w][1]-5*math.sin(math.radians(player_bullets[player_bullet-w][3]*0.82)),
-                                                   player_bullets[player_bullet-w][2]+5*math.sin(math.radians(player_bullets[player_bullet-w][4]*0.82)),
+                player_bullets[player_bullet-w] = (player_bullets[player_bullet-w][0]+5*math.cos(math.radians(player_bullets[player_bullet-w][3]*0.84)), 
+                                                   player_bullets[player_bullet-w][1]-5*math.sin(math.radians(player_bullets[player_bullet-w][3]*0.84)),
+                                                   player_bullets[player_bullet-w][2]+5*math.sin(math.radians(player_bullets[player_bullet-w][4]*1)),
                                                    player_bullets[player_bullet-w][3], player_bullets[player_bullet-w][4])
                 if player_bullets[player_bullet-w][0] > cam[0] + 1100 or player_bullets[player_bullet-w][1] < -60 or player_bullets[player_bullet-w][1] > 60 or player_bullets[player_bullet-w][2]< -60 or player_bullets[player_bullet-w][2]> 60:
                     del player_bullets[player_bullet-w]
@@ -1155,8 +1168,8 @@ if len(result) != 0:
 hp = shipshp[0]
 con.close()
 
-lvls_base_3 = [[200,6, 60,0, 0],[200,6,60,1, 0.2], [80,30,30,1, 0.3], [80,60,30,1, 0.5], [80,60,30,1,0.7], [80,60,30,1,0.8]]
-lvls_base_2 = [[200,6, 60,0],[200,6,60,1], [80,30,30,1], [80,60,6,1], [80,60,4,1]]
+lvls_base_3 = [[200,6, 60,0, 0],[200,6,60,1, 0.2], [80,30,30,1, 0.25], [80,60,30,1, 0.35], [80,60,30,1,0.4], [80,60,30,1,0.5]]
+lvls_base_2 = [[200,6, 60,0],[200,6,40,1], [80,30,20,1], [80,60,6,1], [80,60,4,1]]
 # Меню игры
 while True:
     start_screen()
@@ -1168,9 +1181,9 @@ while True:
                 while gaming2:
                     # Запуск игры
                     if lvl > 60:
-                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 100, max(50, lvls_base_3[4][0]-(lvl//10-6)), min(100, lvls_base_3[4][1]+(lvl//10-6)*5), max(20, lvls_base_3[4][2]-(lvl//10-6)), lvls_base_3[4][3], lvls_base_3[4][4]+1*(lvl//10-6)).res
+                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl//2, 10*lvl, max(50, lvls_base_3[4][0]-(lvl//10-6)), min(100, lvls_base_3[4][1]+(lvl//10-6)*5), max(20, lvls_base_3[4][2]-(lvl//10-6)), lvls_base_3[4][3], lvls_base_3[4][4]+1*(lvl//10-6)).res
                     else:
-                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl // 2, 100, lvls_base_3[lvl // 10 - 1][0], lvls_base_3[lvl // 10 - 1][1], lvls_base_3[lvl // 10 - 1][2], lvls_base_3[lvl // 10 - 1][3], lvls_base_3[lvl // 10 - 1][4]).res
+                        res_game = Game_3d(1300, 700, 60, order + 1, 3, lvl // 2, 10*lvl, lvls_base_3[lvl // 10 - 1][0], lvls_base_3[lvl // 10 - 1][1], lvls_base_3[lvl // 10 - 1][2], lvls_base_3[lvl // 10 - 1][3], lvls_base_3[lvl // 10 - 1][4]).res
                                         
                     if res_game == 1:
                         money += int((lvl)**2 / 100)
