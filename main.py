@@ -702,19 +702,14 @@ class Game_2d:
 
             clock.tick(fps)
 
-def angle_trunc(a):
-    while a < 0.0:
-        a += math.pi * 2
-    return a
-
 
 def getAngleBetweenPoints(x_orig, y_orig, x_landmark, y_landmark):
     deltaY = y_landmark - y_orig
     deltaX = x_landmark - x_orig
-    return angle_trunc(math.atan2(deltaY, deltaX))
+    return math.atan2(deltaY, deltaX)
 
 def angle(cam, cam_a, i):
-    if 90 <(math.degrees(getAngleBetweenPoints(cam[0], cam[1], i[0], i[1]))+cam_a[0]+360)%360 < 270:
+    if 60 <(math.degrees(getAngleBetweenPoints(cam[0], cam[1], i[0], i[1]))+cam_a[0]+360)%360 < 300:
         return 1000, 1000
     i = [i[0]-cam[0], i[1]-cam[1], i[2]-cam[2]]
     c1 = math.cos(math.radians(cam_a[0]))
